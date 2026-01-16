@@ -10,7 +10,14 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ self, nix-darwin, nixpkgs, home-manager }: {
+  outputs = inputs@{ self, nix-darwin, nixpkgs, home-manager }:
+  let
+    system = "aarch64-darwin";
+    pkgs = nixpkgs.legacyPackages.${system};
+  in {
+    # Formatter: run `nix fmt` to format all .nix files
+    formatter.${system} = pkgs.alejandra;
+
     darwinConfigurations."loong" = nix-darwin.lib.darwinSystem {
       modules = [
 
