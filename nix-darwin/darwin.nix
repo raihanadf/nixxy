@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{pkgs, ...}: {
   # System packages
   environment.systemPackages = [
     pkgs.vim
@@ -19,15 +19,15 @@
   # Homebrew
   homebrew = {
     enable = true;
-    brews = [ "mariadb" ];
+    brews = ["mariadb"];
   };
 
   # System PATH
-  environment.systemPath = [ "/opt/homebrew/bin" ];
+  environment.systemPath = ["/opt/homebrew/bin"];
 
   # Enable fish at system level
   programs.fish.enable = true;
-  environment.shells = [ pkgs.fish ];
+  environment.shells = [pkgs.fish];
 
   # Environment variables (system-wide)
   environment.variables = {
@@ -37,7 +37,7 @@
 
   # User config
   system.primaryUser = "raihan";
-  users.knownUsers = [ "raihan" ];
+  users.knownUsers = ["raihan"];
   users.users.raihan = {
     uid = 501;
     home = "/Users/raihan";
