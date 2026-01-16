@@ -23,14 +23,43 @@
             pkgs.fd
             pkgs.tmux
             pkgs.gnupg
+            pkgs.fzf
+            pkgs.bat
         ];
 
       # necessary for using flakes on this system.
       nix.settings.experimental-features = "nix-command flakes";
 
+      # Homebrew
+      homebrew = {
+        enable = true;
+        brews = [ "mariadb" ];
+      };
+
+      # Add Homebrew to PATH
+      environment.systemPath = [ "/opt/homebrew/bin" ];
+
 			# 1. enable fish and necessary stuff
-      programs.fish.enable = true;
+      programs.fish = {
+        enable = true;
+        
+        shellInit = ''
+          # Add Homebrew to PATH
+          fish_add_path /opt/homebrew/bin
+        '';
+      };
+      
       environment.shells = [ pkgs.fish ];
+      
+      # Environment variables
+      environment.variables = {
+        nginxdir = "/usr/local/var/www";
+        nvimdir = "$HOME/.config/nvim";
+      };
+      
+      # Set primary user for homebrew and other user-specific options
+      system.primaryUser = "raihan";
+      
       users.knownUsers = [ "raihan" ];
       users.users.raihan = {
           uid = 501;
