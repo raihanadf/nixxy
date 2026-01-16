@@ -19,7 +19,6 @@
     system = "aarch64-darwin";
     pkgs = nixpkgs.legacyPackages.${system};
   in {
-    # Formatter: run `nix fmt` to format all .nix files
     formatter.${system} = pkgs.alejandra;
 
     darwinConfigurations."loong" = nix-darwin.lib.darwinSystem {
@@ -30,12 +29,12 @@
           system.configurationRevision = self.rev or self.dirtyRev or null;
         })
 
-        # home-manager integration
+        # home-manager
         home-manager.darwinModules.home-manager
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
-          home-manager.backupFileExtension = "backup"; # Fixes the clobber error
+          home-manager.backupFileExtension = "backup";
           home-manager.users.raihan = import ./home.nix;
         }
       ];

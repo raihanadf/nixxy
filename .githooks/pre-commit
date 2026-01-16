@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+staged_nix=$(git diff --cached --name-only | grep '\.nix$')
+
+if [ -n "$staged_nix" ]; then
+  echo "Formatting: $staged_nix"
+
+  echo "$staged_nix" | xargs nix run nixpkgs#alejandra --quiet --
+  echo "$staged_nix" | xargs git add
+
+  echo "Done."
+fi
