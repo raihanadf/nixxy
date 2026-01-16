@@ -13,6 +13,7 @@
     pkgs.fzf
     pkgs.bat
     pkgs.grc
+    pkgs.bat
   ];
 
   nix.settings.experimental-features = "nix-command flakes";

@@ -92,7 +92,7 @@
       fish_vi_key_bindings insert
 
       # FZF configuration
-      set -U fzf_fd_opts \
+      set -g fzf_fd_opts \
         --follow \
         --exclude=.git \
         --exclude=node_modules \
