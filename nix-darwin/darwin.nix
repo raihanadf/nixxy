@@ -12,6 +12,7 @@
     pkgs.gnupg
     pkgs.fzf
     pkgs.bat
+    pkgs.grc
   ];
 
   nix.settings.experimental-features = "nix-command flakes";
