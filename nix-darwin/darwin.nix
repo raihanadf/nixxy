@@ -14,6 +14,7 @@
     pkgs.bat
     pkgs.grc
     pkgs.bat
+    pkgs.ripgrep
   ];
 
   nix.settings.experimental-features = "nix-command flakes";
