@@ -20,10 +20,13 @@
   nix.settings.experimental-features = "nix-command flakes";
 
   # Homebrew
-  homebrew = {
-    enable = true;
-    brews = ["mariadb"];
-  };
+  # homebrew = {
+  #   enable = true;
+  #   brews = [
+  #     "aerospace"
+  #     "sketchybar"
+  #   ];
+  # };
 
   # System PATH
   environment.systemPath = ["/opt/homebrew/bin"];
