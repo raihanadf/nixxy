@@ -44,6 +44,7 @@
 
       # Better apps
       vi = "nvim";
+      leetcode = "nvim leetcode.nvim";
       py = "python3";
 
       # Directories
