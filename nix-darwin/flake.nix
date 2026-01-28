@@ -19,6 +19,10 @@
       url = "github:homebrew/homebrew-cask";
       flake = false;
     };
+    homebrew-felixkratz = {
+      url = "github:FelixKratz/homebrew-formulae";
+      flake = false;
+    };
   };
 
   outputs = inputs @ {
@@ -29,6 +33,7 @@
     nix-homebrew,
     homebrew-core,
     homebrew-cask,
+    homebrew-felixkratz,
   }: let
     system = "aarch64-darwin";
     pkgs = nixpkgs.legacyPackages.${system};
@@ -54,6 +59,7 @@
             taps = {
               "homebrew/homebrew-core" = homebrew-core;
               "homebrew/homebrew-cask" = homebrew-cask;
+              "felixkratz/homebrew-formulae" = homebrew-felixkratz;
             };
             mutableTaps = false;
           };

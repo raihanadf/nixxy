@@ -22,6 +22,9 @@
   # Homebrew
   homebrew = {
     enable = true;
+    brews = [
+      "borders"
+    ];
     casks = [
       "aerospace"
     ];

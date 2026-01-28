@@ -1,0 +1,143 @@
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
+  options.aerospace = {
+    enable = lib.mkEnableOption "aerospace window manager";
+  };
+
+  config = lib.mkIf config.aerospace.enable {
+    home.file.".aerospace.toml".text = ''
+      # Notify Sketchybar about workspace change
+      exec-on-workspace-change = ['/bin/bash', '-c', 'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+
+      # Start Sketchybar and JankyBorders when AeroSpace starts
+      after-startup-command = [
+        'exec-and-forget sketchybar',
+        'exec-and-forget borders'
+      ]
+
+      # Config version for compatibility and deprecations
+      config-version = 2
+
+      # Start AeroSpace at login
+      start-at-login = false
+
+      # Normalizations
+      enable-normalization-flatten-containers = true
+      enable-normalization-opposite-orientation-for-nested-containers = true
+
+      # Layouts
+      accordion-padding = 30
+      default-root-container-layout = 'accordion'
+      default-root-container-orientation = 'auto'
+
+      # Mouse follows focus
+      on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+      # Unhide macOS hidden apps
+      automatically-unhide-macos-hidden-apps = true
+
+      # Persistent workspaces
+      persistent-workspaces = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
+      # Key mapping
+      [key-mapping]
+          preset = 'qwerty'
+
+      [gaps]
+          inner.horizontal = 10
+          inner.vertical =   10
+          outer.left =       10
+          outer.bottom =     5
+          outer.top =        5
+          outer.right =      10
+
+      # Main binding mode
+      [mode.main.binding]
+          # Terminal
+          alt-shift-enter = 'exec-and-forget open -na kitty'
+
+          # Layouts
+          alt-slash = 'layout tiles horizontal vertical'
+          alt-comma = 'layout accordion horizontal vertical'
+
+          # Focus
+          alt-h = 'focus left'
+          alt-j = 'focus down'
+          alt-k = 'focus up'
+          alt-l = 'focus right'
+
+          # Move
+          alt-shift-h = 'move left'
+          alt-shift-j = 'move down'
+          alt-shift-k = 'move up'
+          alt-shift-l = 'move right'
+
+          # Resize
+          alt-minus = 'resize smart -50'
+          alt-equal = 'resize smart +50'
+
+          # Workspace
+          alt-1 = 'workspace 1'
+          alt-2 = 'workspace 2'
+          alt-3 = 'workspace 3'
+          alt-4 = 'workspace 4'
+          alt-5 = 'workspace 5'
+          alt-6 = 'workspace 6'
+          alt-7 = 'workspace 7'
+          alt-8 = 'workspace 8'
+          alt-9 = 'workspace 9'
+
+          # Move node to workspace
+          alt-shift-1 = 'move-node-to-workspace 1'
+          alt-shift-2 = 'move-node-to-workspace 2'
+          alt-shift-3 = 'move-node-to-workspace 3'
+          alt-shift-4 = 'move-node-to-workspace 4'
+          alt-shift-5 = 'move-node-to-workspace 5'
+          alt-shift-6 = 'move-node-to-workspace 6'
+          alt-shift-7 = 'move-node-to-workspace 7'
+          alt-shift-8 = 'move-node-to-workspace 8'
+          alt-shift-9 = 'move-node-to-workspace 9'
+
+          # Workspace Back and Forth
+          alt-tab = 'workspace-back-and-forth'
+          alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+          # Service Mode
+          alt-shift-semicolon = 'mode service'
+
+      # Service binding mode
+      [mode.service.binding]
+          esc = ['reload-config', 'mode main']
+          r = ['flatten-workspace-tree', 'mode main']
+          f = ['layout floating tiling', 'mode main']
+          backspace = ['close-all-windows-but-current', 'mode main']
+
+          alt-shift-h = ['join-with left', 'mode main']
+          alt-shift-j = ['join-with down', 'mode main']
+          alt-shift-k = ['join-with up', 'mode main']
+          alt-shift-l = ['join-with right', 'mode main']
+
+      # Window Rules
+      # Ignore confirmo app completely - keep it floating on current workspace
+      [[on-window-detected]]
+      if.app-id = 'com.confirmo.app'
+      run = ['layout floating']
+
+      [[on-window-detected]]
+      if.app-id = 'com.mitchellh.ghostty'
+      run = ['move-node-to-workspace 1']
+
+      [[on-window-detected]]
+      if.app-id = 'org.mozilla.firefox'
+      run = ['move-node-to-workspace 3']
+
+      [[on-window-detected]]
+      if.app-id = 'com.microsoft.teams2'
+      run = ['move-node-to-workspace 9']
+    '';
+  };
+}
