@@ -15,6 +15,11 @@
     pkgs.grc
     pkgs.bat
     pkgs.ripgrep
+    pkgs.jdk
+    pkgs.jdk17
+    pkgs.tree
+    pkgs.tree-sitter
+    pkgs.texlive.combined.scheme-full
   ];
 
   nix.settings.experimental-features = "nix-command flakes";
@@ -25,9 +30,21 @@
     brews = [
       "borders"
       "sketchybar"
+      "clisp"
+      "fortune"
+      "ghostscript"
+      "imagemagick"
+      "neofetch"
+      "pyenv"
     ];
     casks = [
       "aerospace"
+      "android-platform-tools"
+      "ghostty"
+      "kitty"
+      "linearmouse"
+      "prismlauncher"
+      "visual-studio-code@insiders"
     ];
   };
 
