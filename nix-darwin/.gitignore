@@ -1,0 +1,17 @@
+# Nix build outputs
+result
+result-*
+
+# Nix garbage collection roots
+*.gcroot
+
+# Direnv
+.direnv
+.envrc
+
+# Backup files
+*.backup
+*~
+
+# macOS
+.DS_Store
