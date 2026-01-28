@@ -10,8 +10,8 @@
 
   config = lib.mkIf config.aerospace.enable {
     home.file.".aerospace.toml".text = ''
-      # Notify Sketchybar about workspace change
-      exec-on-workspace-change = ['/bin/bash', '-c', 'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE']
+      # Notify Sketchybar about workspace change - async to avoid blocking
+      exec-on-workspace-change = ['/bin/bash', '-c', '(sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE &)']
 
       # Start Sketchybar and JankyBorders when AeroSpace starts
       after-startup-command = [
@@ -25,13 +25,13 @@
       # Start AeroSpace at login
       start-at-login = false
 
-      # Normalizations
-      enable-normalization-flatten-containers = true
-      enable-normalization-opposite-orientation-for-nested-containers = true
+      # Normalizations - disabled to prevent unwanted stacking
+      enable-normalization-flatten-containers = false
+      enable-normalization-opposite-orientation-for-nested-containers = false
 
       # Layouts
       accordion-padding = 30
-      default-root-container-layout = 'accordion'
+      default-root-container-layout = 'tiles'
       default-root-container-orientation = 'auto'
 
       # Mouse follows focus
@@ -52,7 +52,7 @@
           inner.vertical =   10
           outer.left =       10
           outer.bottom =     5
-          outer.top =        5
+          outer.top =        25
           outer.right =      10
 
       # Main binding mode
@@ -115,6 +115,7 @@
           r = ['flatten-workspace-tree', 'mode main']
           f = ['layout floating tiling', 'mode main']
           backspace = ['close-all-windows-but-current', 'mode main']
+          q = ['exec-and-forget killall sketchybar', 'exec-and-forget killall borders', 'exec-and-forget pkill -9 AeroSpace']
 
           alt-shift-h = ['join-with left', 'mode main']
           alt-shift-j = ['join-with down', 'mode main']
@@ -122,6 +123,10 @@
           alt-shift-l = ['join-with right', 'mode main']
 
       # Window Rules
+      # Force all windows to use tiles layout by default
+      [[on-window-detected]]
+      run = ['layout tiles']
+
       # Ignore confirmo app completely - keep it floating on current workspace
       [[on-window-detected]]
       if.app-id = 'com.confirmo.app'

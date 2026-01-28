@@ -24,6 +24,7 @@
     enable = true;
     brews = [
       "borders"
+      "sketchybar"
     ];
     casks = [
       "aerospace"
