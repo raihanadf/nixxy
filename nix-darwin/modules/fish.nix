@@ -46,6 +46,7 @@
       vi = "nvim";
       leetcode = "nvim leetcode.nvim";
       py = "python3";
+      zed = "/Applications/Zed.app/Contents/MacOS/cli";
 
       # Directories
       nginxdir = "cd $nginxdir";
