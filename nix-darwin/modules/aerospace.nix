@@ -11,12 +11,12 @@
   config = lib.mkIf config.aerospace.enable {
     home.file.".aerospace.toml".text = ''
       # Notify Sketchybar about workspace change - async to avoid blocking
-      exec-on-workspace-change = ['/bin/bash', '-c', '(sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE &)']
+      # exec-on-workspace-change = ['/bin/bash', '-c', '(sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE &)']
 
       # Start Sketchybar and JankyBorders when AeroSpace starts
       after-startup-command = [
-        'exec-and-forget sketchybar',
-        'exec-and-forget borders'
+        # 'exec-and-forget sketchybar',
+        'exec-and-forget borders blacklist="Screen Studio"'
       ]
 
       # Config version for compatibility and deprecations
@@ -52,13 +52,13 @@
           inner.vertical =   10
           outer.left =       10
           outer.bottom =     5
-          outer.top =        25
+          outer.top =        10
           outer.right =      10
 
       # Main binding mode
       [mode.main.binding]
           # Terminal
-          alt-shift-enter = 'exec-and-forget open -na kitty'
+          alt-shift-enter = 'exec-and-forget open -na ghostty'
 
           # Layouts
           alt-slash = 'layout tiles horizontal vertical'
@@ -115,7 +115,8 @@
           r = ['flatten-workspace-tree', 'mode main']
           f = ['layout floating tiling', 'mode main']
           backspace = ['close-all-windows-but-current', 'mode main']
-          q = ['exec-and-forget killall sketchybar', 'exec-and-forget killall borders', 'exec-and-forget pkill -9 AeroSpace']
+          # q = ['exec-and-forget killall sketchybar', 'exec-and-forget killall borders', 'exec-and-forget pkill -9 AeroSpace']
+          q = ['exec-and-forget killall borders', 'exec-and-forget pkill -9 AeroSpace']
 
           alt-shift-h = ['join-with left', 'mode main']
           alt-shift-j = ['join-with down', 'mode main']

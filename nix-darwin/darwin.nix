@@ -29,7 +29,7 @@
     enable = true;
     brews = [
       "borders"
-      "sketchybar"
+      # "sketchybar"
       "clisp"
       "fortune"
       "ghostscript"
@@ -45,6 +45,9 @@
       "linearmouse"
       "prismlauncher"
       "visual-studio-code@insiders"
+      "helium-browser"
+      "insomnia"
+      "skim"
     ];
   };
 
