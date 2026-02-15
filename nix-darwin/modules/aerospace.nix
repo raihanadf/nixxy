@@ -52,7 +52,7 @@
           inner.vertical =   10
           outer.left =       10
           outer.bottom =     5
-          outer.top =        10
+          outer.top =        5
           outer.right =      10
 
       # Main binding mode
@@ -141,9 +141,16 @@
       if.app-id = 'org.mozilla.firefox'
       run = ['move-node-to-workspace 3']
 
+      # Microsoft Teams - move to workspace 9 and make floating
       [[on-window-detected]]
       if.app-id = 'com.microsoft.teams2'
-      run = ['move-node-to-workspace 9']
+      run = ['move-node-to-workspace 9', 'layout floating']
+
+      # Ignore Microsoft Teams call windows - keep them unmanaged/floating
+      [[on-window-detected]]
+      if.app-id = 'com.microsoft.teams2'
+      if.window-title-regex-substring = 'call|meeting|Teams Call'
+      run = ['layout floating']
     '';
   };
 }
