@@ -16,7 +16,7 @@
       # Start Sketchybar and JankyBorders when AeroSpace starts
       after-startup-command = [
         # 'exec-and-forget sketchybar',
-        'exec-and-forget borders blacklist="Screen Studio"'
+        # 'exec-and-forget borders blacklist="Screen Studio"'
       ]
 
       # Config version for compatibility and deprecations
