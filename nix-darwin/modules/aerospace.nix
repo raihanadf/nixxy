@@ -124,6 +124,16 @@
           alt-shift-l = ['join-with right', 'mode main']
 
       # Window Rules
+      # TablePlus - floating in workspace 6 (MUST be before generic layout tiles rule)
+      [[on-window-detected]]
+      if.app-id = 'com.tinyapp.TablePlus'
+      run = ['move-node-to-workspace 6', 'layout floating']
+
+      # TablePlus SetApp version
+      [[on-window-detected]]
+      if.app-id = 'com.tinyapp.TablePlus-setapp'
+      run = ['move-node-to-workspace 6', 'layout floating']
+
       # Force all windows to use tiles layout by default
       [[on-window-detected]]
       run = ['layout tiles']
