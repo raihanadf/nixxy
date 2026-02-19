@@ -124,7 +124,10 @@
           alt-shift-l = ['join-with right', 'mode main']
 
       # Window Rules
-      # TablePlus - floating in workspace 6 (MUST be before generic layout tiles rule)
+      # IMPORTANT: App-specific workspace rules MUST come BEFORE generic 'layout tiles' rule
+      # because aerospace evaluates rules in order and first matching rule wins
+
+      # TablePlus - floating in workspace 6
       [[on-window-detected]]
       if.app-id = 'com.tinyapp.TablePlus'
       run = ['move-node-to-workspace 6', 'layout floating']
@@ -134,22 +137,30 @@
       if.app-id = 'com.tinyapp.TablePlus-setapp'
       run = ['move-node-to-workspace 6', 'layout floating']
 
-      # Force all windows to use tiles layout by default
-      [[on-window-detected]]
-      run = ['layout tiles']
-
-      # Ignore confirmo app completely - keep it floating on current workspace
-      [[on-window-detected]]
-      if.app-id = 'com.confirmo.app'
-      run = ['layout floating']
-
+      # Ghostty - workspace 1
       [[on-window-detected]]
       if.app-id = 'com.mitchellh.ghostty'
       run = ['move-node-to-workspace 1']
 
+      # VSCode - workspace 2
+      [[on-window-detected]]
+      if.app-id = 'com.microsoft.VSCode'
+      run = ['move-node-to-workspace 2']
+
+      # Firefox - workspace 3
       [[on-window-detected]]
       if.app-id = 'org.mozilla.firefox'
       run = ['move-node-to-workspace 3']
+
+      # Spotify - workspace 4
+      [[on-window-detected]]
+      if.app-id = 'com.spotify.client'
+      run = ['move-node-to-workspace 4']
+
+      # WhatsApp - all windows including calls to workspace 7
+      [[on-window-detected]]
+      if.app-id = 'net.whatsapp.WhatsApp'
+      run = ['move-node-to-workspace 7']
 
       # Microsoft Teams - move to workspace 9 and make floating
       [[on-window-detected]]
@@ -160,6 +171,16 @@
       [[on-window-detected]]
       if.app-id = 'com.microsoft.teams2'
       if.window-title-regex-substring = 'call|meeting|Teams Call'
+      run = ['layout floating']
+
+      # Force all windows to use tiles layout by default
+      # This MUST be after all app-specific rules
+      [[on-window-detected]]
+      run = ['layout tiles']
+
+      # Ignore confirmo app completely - keep it floating on current workspace
+      [[on-window-detected]]
+      if.app-id = 'com.confirmo.app'
       run = ['layout floating']
     '';
   };
