@@ -14,6 +14,8 @@
     pkgs.bat
     pkgs.grc
     pkgs.bat
+    pkgs.git
+    pkgs.gh
     pkgs.ripgrep
     pkgs.jdk
     pkgs.jdk17
