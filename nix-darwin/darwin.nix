@@ -17,6 +17,7 @@
     pkgs.git
     pkgs.gh
     pkgs.ripgrep
+    pkgs.stow
     pkgs.jdk
     pkgs.jdk17
     pkgs.tree
