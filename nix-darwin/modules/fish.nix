@@ -120,6 +120,8 @@
       fish_add_path $HOME/.antigravity/antigravity/bin
       fish_add_path $HOME/.opencode/bin
       fish_add_path $HOME/.cargo/bin
+      fish_add_path $HOME/.nix-profile/bin
+      fish_add_path /nix/var/nix/profiles/default/bin
     '';
   };
 }
