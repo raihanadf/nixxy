@@ -113,6 +113,7 @@
 
     # Shell init (PATH)
     shellInit = ''
+      set -gx ZEROCLAW_API_KEY "d6d1c90c556f4411a374981470b9b9b8.XTrD39sbJiHIQgRL"
       fish_add_path /opt/homebrew/bin
       fish_add_path $HOME/.spicetify
       fish_add_path $HOME/.volta/bin

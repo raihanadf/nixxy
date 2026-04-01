@@ -23,6 +23,7 @@
     pkgs.tree
     pkgs.tree-sitter
     pkgs.texlive.combined.scheme-full
+    pkgs.htop-vim
   ];
 
   nix.settings.experimental-features = "nix-command flakes";
@@ -39,6 +40,7 @@
       "imagemagick"
       "neofetch"
       "pyenv"
+      "zeroclaw"
     ];
     casks = [
       "aerospace"
