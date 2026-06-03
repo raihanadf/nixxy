@@ -23,6 +23,14 @@
       url = "github:FelixKratz/homebrew-formulae";
       flake = false;
     };
+    homebrew-acsandmann = {
+      url = "github:acsandmann/homebrew-tap";
+      flake = false;
+    };
+    homebrew-geodro-lerd = {
+      url = "github:geodro/homebrew-lerd";
+      flake = false;
+    };
   };
 
   outputs = inputs @ {
@@ -34,6 +42,8 @@
     homebrew-core,
     homebrew-cask,
     homebrew-felixkratz,
+    homebrew-acsandmann,
+    homebrew-geodro-lerd,
   }: let
     system = "aarch64-darwin";
     pkgs = nixpkgs.legacyPackages.${system};
@@ -60,6 +70,8 @@
               "homebrew/homebrew-core" = homebrew-core;
               "homebrew/homebrew-cask" = homebrew-cask;
               "felixkratz/homebrew-formulae" = homebrew-felixkratz;
+              "acsandmann/homebrew-tap" = homebrew-acsandmann;
+              "geodro/homebrew-lerd" = homebrew-geodro-lerd;
             };
             mutableTaps = false;
           };

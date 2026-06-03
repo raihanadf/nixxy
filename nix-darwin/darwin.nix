@@ -24,6 +24,7 @@
     pkgs.tree-sitter
     pkgs.texlive.combined.scheme-full
     pkgs.htop-vim
+    pkgs.ollama
   ];
 
   nix.settings.experimental-features = "nix-command flakes";
@@ -31,6 +32,10 @@
   # Homebrew
   homebrew = {
     enable = true;
+    taps = [
+      "acsandmann/tap"
+      "geodro/lerd"
+    ];
     brews = [
       "borders"
       # "sketchybar"
@@ -41,6 +46,8 @@
       "neofetch"
       "pyenv"
       "zeroclaw"
+      "acsandmann/tap/rift"
+      "geodro/lerd/lerd"
     ];
     casks = [
       "aerospace"
@@ -53,6 +60,7 @@
       "helium-browser"
       "insomnia"
       "skim"
+      "discord"
     ];
   };
 
