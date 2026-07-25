@@ -43,7 +43,6 @@
     homebrew-cask,
     homebrew-felixkratz,
     homebrew-acsandmann,
-    homebrew-geodro-lerd,
   }: let
     system = "aarch64-darwin";
     pkgs = nixpkgs.legacyPackages.${system};
@@ -71,7 +70,6 @@
               "homebrew/homebrew-cask" = homebrew-cask;
               "felixkratz/homebrew-formulae" = homebrew-felixkratz;
               "acsandmann/homebrew-tap" = homebrew-acsandmann;
-              "geodro/homebrew-lerd" = homebrew-geodro-lerd;
             };
             mutableTaps = false;
           };
