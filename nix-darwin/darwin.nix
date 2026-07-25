@@ -34,7 +34,7 @@
     enable = true;
     taps = [
       "acsandmann/tap"
-      "geodro/lerd"
+      # "geodro/lerd"
     ];
     brews = [
       "borders"
@@ -47,7 +47,7 @@
       "pyenv"
       "zeroclaw"
       "acsandmann/tap/rift"
-      "geodro/lerd/lerd"
+      # "geodro/lerd/lerd"
     ];
     casks = [
       "aerospace"

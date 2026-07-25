@@ -27,10 +27,10 @@
       url = "github:acsandmann/homebrew-tap";
       flake = false;
     };
-    homebrew-geodro-lerd = {
-      url = "github:geodro/homebrew-lerd";
-      flake = false;
-    };
+    # homebrew-geodro-lerd = {
+    #   url = "github:geodro/homebrew-lerd";
+    #   flake = false;
+    # };
   };
 
   outputs = inputs @ {
