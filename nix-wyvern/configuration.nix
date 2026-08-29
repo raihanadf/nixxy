@@ -11,6 +11,7 @@
     ./modules/nvidia.nix
     ./modules/ollama.nix
     ./modules/honcho.nix
+    ./modules/honcho-mcp.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
