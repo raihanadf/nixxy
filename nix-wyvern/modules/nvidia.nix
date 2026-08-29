@@ -32,7 +32,30 @@
     # Turing, so the open modules are the recommended path (nixpkgs says as
     # much) and match what already worked on Arch.
     open = true;
-    package = config.boot.kernelPackages.nvidiaPackages.latest;
+    # Pinned to an exact version rather than `nvidiaPackages.latest`.
+    #
+    # `latest` is `selectHighestVersion production new_feature`, so it moves
+    # whenever nixpkgs bumps either branch. A driver version change rotates the
+    # Vulkan pipeline cache UUID, which invalidates Steam's fossilize replay
+    # cache -- shadercache/<appid>/fozpipelinesv6/replay_cache.<fingerprint>.foz
+    # -- and forces a full "Processing Vulkan Shaders" pass. For CS2 that is
+    # 1.56M pipelines and ~60s on every launch until it completes again.
+    #
+    # 610.57.04 is nixpkgs' `new_feature`, and is the branch carrying the Turing
+    # RTD3 fix relied on above; `production` (595.91.07) predates it, so the
+    # stable channels are not an option here.
+    #
+    # To bump: copy version + hashes from `new_feature` in
+    # pkgs/os-specific/linux/nvidia-x11/default.nix at the locked nixpkgs rev.
+    # Expect one slow Steam shader pass afterwards.
+    package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
+      version = "610.57.04";
+      sha256_64bit = "sha256-suk1xmuDuwDAyFe8jg7g/VLekoa0DJzB7sKafOfrEW0=";
+      sha256_aarch64 = "sha256-QCefrMBCmpOwuOyXv1k5Gj0iB2CYlPgnG3JToUw/j54=";
+      openSha256 = "sha256-rQHOOOY4KL92Ww3KDwh+j4eGU7oNAH8LutZC5wmFnPo=";
+      settingsSha256 = "sha256-ZEMo8I8Zc2Tq6RVDNYpAH+f094dUaZiBqO+5f6lIjRI=";
+      persistencedSha256 = "sha256-aXmD2VY1RLlgAnlHhOUMWzvMyhI6JTClcFLm4imF/mA=";
+    };
 
     modesetting.enable = true;
     nvidiaSettings = true;
