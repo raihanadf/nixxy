@@ -26,7 +26,7 @@ docker info >/dev/null 2>&1  || die "cannot talk to docker. If you were just add
 # request time rather than at startup, which is much harder to read.
 curl -fsS "$OLLAMA/api/tags" >/dev/null 2>&1 || die "ollama not responding on $OLLAMA"
 for m in qwen3:4b nomic-embed-text; do
-  curl -fsS "$OLLAMA/api/tags" | grep -q "\"$m\"" \
+  curl -fsS "$OLLAMA/api/tags" | grep -qE "\"$m(:[^\"]*)?\"" \
     || die "ollama is missing model '$m' (services.ollama.loadModels should have pulled it)"
 done
 echo "docker, uv, ollama + both models: ok"
