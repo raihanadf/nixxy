@@ -100,6 +100,7 @@
     git
     gnupg
     openssl
+    jq
   ];
 
   system.stateVersion = "26.05";
