@@ -6,13 +6,22 @@
 # Not packaged declaratively for the same reason honcho-cli isn't (see
 # modules/honcho.nix): it owns a git checkout + bun-installed node_modules
 # under ~/.honcho, mutable state that doesn't belong in the Nix store.
-# modules/honcho-mcp.nix runs `bun run dev` from the directory this script
-# creates. Run this AFTER nixos-rebuild switch -- it needs bun and git from
-# the nix side.
+# modules/honcho-mcp.nix runs it (via node -- see that file for why) from
+# the directory this script creates. Run this AFTER nixos-rebuild switch --
+# it needs bun and git from the nix side.
 set -euo pipefail
 
 DEST="$HOME/.honcho/mcp-server"
 REPO="https://github.com/plastic-labs/honcho.git"
+
+# Cloudflare Workers' `env` bindings do NOT come from the OS process
+# environment (systemd `Environment=` is invisible to the Worker) -- only
+# from .dev.vars / wrangler.toml [vars] / --var. Without this file the
+# Worker silently falls back to HONCHO_API_URL's default, the real
+# https://api.honcho.dev, and every tool call fails with a confusing
+# "Invalid API key" (it's genuinely talking to the wrong server, not
+# rejecting a bad token).
+DEV_VARS_LINE="HONCHO_API_URL=http://127.0.0.1:8000"
 
 say() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 die() { printf '\033[31merror: %s\033[0m\n' "$*" >&2; exit 1; }
@@ -34,6 +43,9 @@ fi
 say "Installing dependencies"
 cd "$DEST/mcp"
 bun install
+
+say "Writing .dev.vars"
+echo "$DEV_VARS_LINE" > .dev.vars
 
 say "Done."
 cat <<EOF
