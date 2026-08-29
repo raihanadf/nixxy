@@ -5,6 +5,10 @@
   oh-my-pi,
   ...
 }: {
+  imports = [
+    ./modules/fish.nix
+  ];
+
   home.username = "raihan";
   home.homeDirectory = "/home/raihan";
   home.stateVersion = "26.05";
