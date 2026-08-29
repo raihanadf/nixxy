@@ -19,7 +19,7 @@
     kitty
     wget
     claude-code
-    oh-my-pi.packages.${pkgs.system}.default
+    oh-my-pi.packages.${pkgs.stdenv.hostPlatform.system}.default
     grc
     fzf
     fd

@@ -12,7 +12,7 @@
     src = "${suckless}/slock";
     buildInputs =
       (old.buildInputs or [])
-      ++ (with pkgs; [imlib2 xorg.libXext xorg.libXrandr xorg.libXinerama]);
+      ++ (with pkgs; [imlib2 libxext libxrandr libxinerama]);
   });
 
   # dwm from the dwm-niri fork (scrolling layout, animations, overview).
@@ -31,12 +31,12 @@
       ++ (with pkgs; [
         fontconfig
         freetype
-        xorg.libXinerama
-        xorg.libXft
-        xorg.libXrender
-        xorg.libXcomposite
-        xorg.libXdamage
-        xorg.libXext
+        libxinerama
+        libxft
+        libxrender
+        libxcomposite
+        libxdamage
+        libxext
       ]);
   });
 in {
@@ -58,7 +58,7 @@ in {
   users.groups.nobody = {};
 
   # Core X font providing the "6x13" XLFD slock renders its message with.
-  fonts.packages = [pkgs.xorg.fontmiscmisc];
+  fonts.packages = [pkgs.font-misc-misc];
 
   # Daemons the dotfiles bar/scripts talk to.
   services.upower.enable = true;
@@ -84,12 +84,12 @@ in {
     ranger
     redshift
     lxappearance
-    xorg.xrdb
-    xorg.xrandr
-    xorg.xset
+    xrdb
+    xrandr
+    xset
     # bar (autostart.sh) + dotfiles scripts
-    xorg.xinput
-    xorg.xsetroot
+    xinput
+    xsetroot
     xdotool
     scrot
     udiskie
