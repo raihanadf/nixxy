@@ -1,39 +1,38 @@
 {
-  description = "Home Manager configuration for Wyvern";
+  description = "raihan's NixOS configuration";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    oh-my-pi.url = "github:can1357/oh-my-pi";
   };
 
   outputs = {
     self,
     nixpkgs,
     home-manager,
+    oh-my-pi,
     ...
   }: let
     system = "x86_64-linux";
-
-    # UPDATE: We import nixpkgs with the config to allow unfree software
-    pkgs = import nixpkgs {
-      inherit system;
-      config.allowUnfree = true;
-    };
-
-    username = "raihan";
-    hostname = "wyvern";
   in {
-    homeConfigurations.${hostname} = home-manager.lib.homeManagerConfiguration {
-      inherit pkgs;
-
-      extraSpecialArgs = {inherit username;};
-
+    nixosConfigurations.wyvern = nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = {inherit oh-my-pi;};
       modules = [
-        ./home.nix
+        ./configuration.nix
+        home-manager.nixosModules.home-manager
+        {
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.extraSpecialArgs = {inherit oh-my-pi;};
+          home-manager.users.raihan = import ./home.nix;
+        }
       ];
     };
   };

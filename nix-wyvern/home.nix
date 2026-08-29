@@ -1,47 +1,21 @@
+# User-level configuration for raihan, managed by Home Manager.
 {
   config,
   pkgs,
-  username,
+  oh-my-pi,
   ...
 }: {
-  home.username = username;
-  home.homeDirectory = "/home/${username}";
+  home.username = "raihan";
+  home.homeDirectory = "/home/raihan";
+  home.stateVersion = "26.05";
 
-  imports = [
-    ./modules/fish.nix
-  ];
-
-  # Packages
   home.packages = with pkgs; [
-    neovim
+    kdePackages.kate
+    kitty
     wget
-    volta
     claude-code
-    stow
-    grc
-    less
-    openssh
-    git
-    php83
-    php83Packages.composer
-    pfetch
-    tmux
-    gnupg
-    fzf
-    bat
-    gh
-    ripgrep
-    tree
-    tree-sitter
-    fd
-    python311
-    pyenv
-    alejandra
+    oh-my-pi.packages.${pkgs.system}.default
   ];
 
-  # Let Home Manager install and manage itself
   programs.home-manager.enable = true;
-
-  # Required for backwards compatibility, do not change
-  home.stateVersion = "24.11";
 }
