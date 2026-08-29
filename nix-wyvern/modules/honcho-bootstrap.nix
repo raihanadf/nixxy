@@ -30,80 +30,113 @@
 }: let
   # The custom .env block appended to the honcho profile. The managed block
   # (ports, image pin) is written by honcho-cli's `start`; these keys are the
-  # local-ollama wiring + the generated JWT secret. `env` wins over
-  # config.toml, and every model slot is pinned so nothing ever falls back to
-  # OpenAI's API.
+  # provider wiring + the generated JWT secret. `env` wins over config.toml,
+  # and every model slot is pinned so nothing ever falls back to OpenAI's API.
+  #
+  # Delimited and versioned. The first cut of this block was appended once and
+  # never revisited, so editing it here did nothing to an already-provisioned
+  # machine. The markers below let the bootstrap replace a stale block in
+  # place; bump envVersion whenever this template changes.
+  envVersion = "3";
+
   envTemplate = ''
-    # --- Auth -------------------------------------------------------------------
+    # >>> nixxy-managed v3 >>>
+    # Generated from modules/honcho-bootstrap.nix. Edits here are overwritten
+    # when envVersion changes -- change the template, not this file.
+
+    # [auth]
     # On, because the API is exposed to the tailnet for loong, and the tailnet
     # has a second user on it. The firewall rule is not the security boundary;
-    # this is. Generated per machine by honcho-bootstrap.
+    # this is. Generated per machine, and preserved across template bumps --
+    # rotating it would invalidate the bearer tokens already written into
+    # ~/.omp/agent/mcp.json and ~/.claude.json.
     AUTH_USE_AUTH=true
     AUTH_JWT_SECRET=__AUTH_JWT_SECRET__
 
-    # --- Provider ---------------------------------------------------------------
-    # Ollama on the host, reached from the containers over the docker bridge.
-    # 172.17.0.1 is the host's docker0 address: stable, and routable from the
-    # compose network too. Ollama ignores the key but the OpenAI client
-    # requires a non-empty one.
-    LLM_OPENAI_API_KEY=ollama
+    # [provider]
+    # OpenRouter, OpenAI-compatible, so TRANSPORT stays `openai` and only the
+    # base URL and model change. Read at boot from ~/.honcho/openrouter-key
+    # (0600, outside this repo) -- the key must never reach the nix store or
+    # git. The embedding slot below points at local ollama, which ignores the
+    # key entirely, so one variable serves both.
+    LLM_OPENAI_API_KEY=__OPENROUTER_API_KEY__
 
-    # --- Deriver (runs on every message) ----------------------------------------
+    # [deriver] runs on every message -- the cost-sensitive slot
+    # tencent/hy3: 295B MoE, 21B active, 262k context. Cheapest model on
+    # OpenRouter that declares both tool calling and structured outputs, which
+    # Honcho requires. Hy3 emits reasoning tokens by default (~50 even for a
+    # trivial completion) and they bill at the completion rate, so effort is
+    # pinned low here where volume is high.
+    #
+    # THINKING_EFFORT is a first-class field on the model config, NOT an
+    # override: ModelOverrideSettings only carries api_key, api_key_env,
+    # base_url and provider_params, and its model_config sets extra="ignore".
+    # An OVERRIDES__REASONING_EFFORT key is therefore accepted and silently
+    # discarded -- verified against the running container's parsed settings.
+    # Valid values: none|minimal|low|medium|high|xhigh|max.
     DERIVER_MODEL_CONFIG__TRANSPORT=openai
-    DERIVER_MODEL_CONFIG__MODEL=qwen3:4b
-    DERIVER_MODEL_CONFIG__OVERRIDES__BASE_URL=http://172.17.0.1:11434/v1
-    # Ollama's OpenAI surface supports json_object but not full json_schema.
-    DERIVER_MODEL_CONFIG__STRUCTURED_OUTPUT_MODE=json_object
-    # Default is 25000, well past what fits in a 16k context alongside the output.
-    DERIVER_MAX_INPUT_TOKENS=8000
+    DERIVER_MODEL_CONFIG__MODEL=tencent/hy3
+    DERIVER_MODEL_CONFIG__OVERRIDES__BASE_URL=https://openrouter.ai/api/v1
+    DERIVER_MODEL_CONFIG__THINKING_EFFORT=low
+    # Hy3 supports real json_schema, unlike ollama which only did json_object.
+    DERIVER_MODEL_CONFIG__STRUCTURED_OUTPUT_MODE=json_schema
+    # Was 8000, sized for qwen3's 16k local context. This is a ceiling, not a
+    # target -- raising it only costs when that much context actually exists.
+    DERIVER_MAX_INPUT_TOKENS=16000
 
-    # --- Embeddings -------------------------------------------------------------
-    # nomic-embed-text is 768-dim; Honcho defaults to OpenAI's 1536. The
-    # dimension MUST match the model or pgvector rejects every insert.
+    # [embeddings] -- stays local, permanently
+    # Neither OpenRouter nor DeepSeek exposes an embeddings endpoint, and
+    # EMBEDDING_VECTOR_DIMENSIONS is baked into the pgvector column: changing
+    # the model means rebuilding message_embeddings. nomic-embed-text is
+    # 768-dim and runs on CPU (see modules/ollama.nix).
     EMBEDDING_MODEL_CONFIG__TRANSPORT=openai
     EMBEDDING_MODEL_CONFIG__MODEL=nomic-embed-text
     EMBEDDING_MODEL_CONFIG__OVERRIDES__BASE_URL=http://172.17.0.1:11434/v1
     EMBEDDING_VECTOR_DIMENSIONS=768
 
-    # --- Dialectic (the `chat` endpoint), one slot per reasoning level -----------
-    # Only one model fits in 6 GB, so every level points at it; the levels
-    # still differ by tool-iteration budget.
-    DIALECTIC_MAX_INPUT_TOKENS=16000
+    # [dialectic] the `chat` endpoint, one slot per reasoning level
+    # Low levels get Hy3; high and max get a stronger model. These fire only
+    # when a question is deliberately asked, so the price difference is
+    # irrelevant at that volume and the quality difference is not.
+    DIALECTIC_MAX_INPUT_TOKENS=32000
     DIALECTIC_LEVELS__minimal__MODEL_CONFIG__TRANSPORT=openai
-    DIALECTIC_LEVELS__minimal__MODEL_CONFIG__MODEL=qwen3:4b
-    DIALECTIC_LEVELS__minimal__MODEL_CONFIG__OVERRIDES__BASE_URL=http://172.17.0.1:11434/v1
+    DIALECTIC_LEVELS__minimal__MODEL_CONFIG__MODEL=tencent/hy3
+    DIALECTIC_LEVELS__minimal__MODEL_CONFIG__OVERRIDES__BASE_URL=https://openrouter.ai/api/v1
     DIALECTIC_LEVELS__low__MODEL_CONFIG__TRANSPORT=openai
-    DIALECTIC_LEVELS__low__MODEL_CONFIG__MODEL=qwen3:4b
-    DIALECTIC_LEVELS__low__MODEL_CONFIG__OVERRIDES__BASE_URL=http://172.17.0.1:11434/v1
+    DIALECTIC_LEVELS__low__MODEL_CONFIG__MODEL=tencent/hy3
+    DIALECTIC_LEVELS__low__MODEL_CONFIG__OVERRIDES__BASE_URL=https://openrouter.ai/api/v1
     DIALECTIC_LEVELS__medium__MODEL_CONFIG__TRANSPORT=openai
-    DIALECTIC_LEVELS__medium__MODEL_CONFIG__MODEL=qwen3:4b
-    DIALECTIC_LEVELS__medium__MODEL_CONFIG__OVERRIDES__BASE_URL=http://172.17.0.1:11434/v1
+    DIALECTIC_LEVELS__medium__MODEL_CONFIG__MODEL=tencent/hy3
+    DIALECTIC_LEVELS__medium__MODEL_CONFIG__OVERRIDES__BASE_URL=https://openrouter.ai/api/v1
     DIALECTIC_LEVELS__high__MODEL_CONFIG__TRANSPORT=openai
-    DIALECTIC_LEVELS__high__MODEL_CONFIG__MODEL=qwen3:4b
-    DIALECTIC_LEVELS__high__MODEL_CONFIG__OVERRIDES__BASE_URL=http://172.17.0.1:11434/v1
+    DIALECTIC_LEVELS__high__MODEL_CONFIG__MODEL=deepseek/deepseek-v3.2-exp
+    DIALECTIC_LEVELS__high__MODEL_CONFIG__OVERRIDES__BASE_URL=https://openrouter.ai/api/v1
     DIALECTIC_LEVELS__max__MODEL_CONFIG__TRANSPORT=openai
-    DIALECTIC_LEVELS__max__MODEL_CONFIG__MODEL=qwen3:4b
-    DIALECTIC_LEVELS__max__MODEL_CONFIG__OVERRIDES__BASE_URL=http://172.17.0.1:11434/v1
+    DIALECTIC_LEVELS__max__MODEL_CONFIG__MODEL=deepseek/deepseek-v3.2-exp
+    DIALECTIC_LEVELS__max__MODEL_CONFIG__OVERRIDES__BASE_URL=https://openrouter.ai/api/v1
 
-    # --- Summary ----------------------------------------------------------------
+    # [summary]
     SUMMARY_MODEL_CONFIG__TRANSPORT=openai
-    SUMMARY_MODEL_CONFIG__MODEL=qwen3:4b
-    SUMMARY_MODEL_CONFIG__OVERRIDES__BASE_URL=http://172.17.0.1:11434/v1
+    SUMMARY_MODEL_CONFIG__MODEL=tencent/hy3
+    SUMMARY_MODEL_CONFIG__OVERRIDES__BASE_URL=https://openrouter.ai/api/v1
+    SUMMARY_MODEL_CONFIG__THINKING_EFFORT=low
 
-    # --- Dream (background consolidation) ---------------------------------------
-    # Off to start. A dream run occupies the GPU for a long stretch and starves
-    # the deriver. Both slots are still pinned so that flipping DREAM_ENABLED=true
-    # never falls through to OpenAI.
+    # [dream] background consolidation
+    # Still off, but for a new reason. It used to be off because a dream run
+    # occupied the GPU and starved the deriver; inference is remote now, so the
+    # remaining cost is money rather than contention. Flip to true to try it --
+    # both slots are pinned so it can never fall through to OpenAI.
     DREAM_ENABLED=false
     DREAM_DEDUCTION_MODEL_CONFIG__TRANSPORT=openai
-    DREAM_DEDUCTION_MODEL_CONFIG__MODEL=qwen3:4b
-    DREAM_DEDUCTION_MODEL_CONFIG__OVERRIDES__BASE_URL=http://172.17.0.1:11434/v1
+    DREAM_DEDUCTION_MODEL_CONFIG__MODEL=tencent/hy3
+    DREAM_DEDUCTION_MODEL_CONFIG__OVERRIDES__BASE_URL=https://openrouter.ai/api/v1
     DREAM_INDUCTION_MODEL_CONFIG__TRANSPORT=openai
-    DREAM_INDUCTION_MODEL_CONFIG__MODEL=qwen3:4b
-    DREAM_INDUCTION_MODEL_CONFIG__OVERRIDES__BASE_URL=http://172.17.0.1:11434/v1
+    DREAM_INDUCTION_MODEL_CONFIG__MODEL=tencent/hy3
+    DREAM_INDUCTION_MODEL_CONFIG__OVERRIDES__BASE_URL=https://openrouter.ai/api/v1
 
-    # --- App --------------------------------------------------------------------
-    GET_CONTEXT_MAX_TOKENS=16000
+    # [app]
+    GET_CONTEXT_MAX_TOKENS=32000
+    # <<< nixxy-managed <<<
   '';
 
   # The MCP worker (.dev.vars): points the Cloudflare Worker at the local API.
@@ -205,14 +238,54 @@ in {
         LLM_OPENAI_API_KEY=ollama "$CLI" start
       fi
 
+      # --- custom .env block, versioned -----------------------------------------
+      # Replaced in place whenever envVersion changes. The first cut of this
+      # was append-once, guarded on a key name, so template edits silently
+      # never reached an already-provisioned machine.
       ENV_CHANGED=0
-      if ! grep -q '^DERIVER_MODEL_CONFIG__TRANSPORT=' "$PROFILES/.env" 2>/dev/null; then
-        log "appending custom .env block"
-        SECRET=$(python3 -c 'import secrets; print(secrets.token_hex(32))')
-        sed "s/__AUTH_JWT_SECRET__/$SECRET/" <<'ENVEOF' >> "$PROFILES/.env"
+      KEYFILE=$HOME/.honcho/openrouter-key
+      if ! grep -qF '# >>> nixxy-managed v${envVersion} >>>' "$PROFILES/.env" 2>/dev/null; then
+        # The API key lives outside the repo and outside the nix store. Without
+        # it every LLM slot would 401 on every message, so a missing key leaves
+        # the previous working .env untouched rather than breaking the stack.
+        APIKEY=""
+        if [ -r "$KEYFILE" ]; then
+          APIKEY=$(tr -d ' \n\r' < "$KEYFILE")
+        fi
+
+        if [ -z "$APIKEY" ]; then
+          log "ERROR: $KEYFILE missing or empty -- .env left unchanged."
+          log "       printf '%s' 'sk-or-v1-...' > $KEYFILE && chmod 600 $KEYFILE"
+          log "       then: systemctl restart honcho-bootstrap"
+        else
+          # Reuse the existing JWT secret. Regenerating it would invalidate the
+          # bearer tokens already baked into ~/.omp/agent/mcp.json and
+          # ~/.claude.json, silently cutting both agents off from honcho.
+          SECRET=$(sed -n 's/^AUTH_JWT_SECRET=//p' "$PROFILES/.env" 2>/dev/null | head -1)
+          if [ -z "$SECRET" ]; then
+            log "no existing AUTH_JWT_SECRET, generating one"
+            SECRET=$(python3 -c 'import secrets; print(secrets.token_hex(32))')
+          else
+            log "preserving existing AUTH_JWT_SECRET"
+          fi
+
+          log "installing .env block v${envVersion}"
+          # Drop any previous managed block: the marked form, then the original
+          # unmarked one, which was appended last and so ran to end-of-file.
+          sed -i '/^# >>> nixxy-managed /,/^# <<< nixxy-managed <<<$/d' "$PROFILES/.env"
+          # Pre-nix setup.sh header: stale, and it interpolated the JWT secret
+          # into a plaintext comment. Everything from it down was ours.
+          sed -i '/^# Honcho server config for the fully-local wyvern stack\.$/,$d' "$PROFILES/.env"
+          sed -i '/^# --- Auth ---/,$d' "$PROFILES/.env"
+
+          # `|` as the sed delimiter: the OpenRouter key is base64-ish and can
+          # contain `/`, which would terminate a `/`-delimited expression.
+          sed -e "s|__AUTH_JWT_SECRET__|$SECRET|" \
+              -e "s|__OPENROUTER_API_KEY__|$APIKEY|" <<'ENVEOF' >> "$PROFILES/.env"
       ${envTemplate}
       ENVEOF
-        ENV_CHANGED=1
+          ENV_CHANGED=1
+        fi
       fi
 
       # honcho-cli's managed block defaults auth OFF and wins over the custom
@@ -224,8 +297,8 @@ in {
       fi
 
       if [ "$ENV_CHANGED" = 1 ]; then
-        log "recreating api container to apply .env"
-        docker compose -p honcho-local --project-directory "$PROFILES" up -d --force-recreate api
+        log "recreating api + deriver containers to apply .env"
+        docker compose -p honcho-local --project-directory "$PROFILES" up -d --force-recreate api deriver
       fi
 
       # wait for the api only when it is actually running: a stopped stack is
