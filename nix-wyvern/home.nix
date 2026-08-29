@@ -8,6 +8,7 @@
 }: {
   imports = [
     ./modules/fish.nix
+    ./modules/node.nix
   ];
 
   home.username = "raihan";
