@@ -55,10 +55,14 @@
     isNormalUser = true;
     description = "Raihan";
     extraGroups = ["networkmanager" "wheel"];
+    shell = pkgs.fish;
   };
 
   # Install firefox.
   programs.firefox.enable = true;
+
+  # Enable fish system-wide (registers it in /etc/shells for login).
+  programs.fish.enable = true;
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;

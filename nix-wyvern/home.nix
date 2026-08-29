@@ -19,6 +19,10 @@
     wget
     claude-code
     oh-my-pi.packages.${pkgs.system}.default
+    grc
+    fzf
+    fd
+    bat
   ];
 
   programs.home-manager.enable = true;
