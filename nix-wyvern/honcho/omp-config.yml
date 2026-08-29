@@ -1,0 +1,13 @@
+modelRoles:
+  default: deepseek/deepseek-v4-flash:max
+symbolPreset: ascii
+composer:
+  shape: claude
+theme:
+  dark: titanium
+  light: light
+setupVersion: 2
+skills:
+  customDirectories:
+    - /home/raihan/.omp/skills
+hideThinkingBlock: true

@@ -41,7 +41,11 @@
   in {
     nixosConfigurations.wyvern = nixpkgs.lib.nixosSystem {
       inherit system;
-      specialArgs = {inherit oh-my-pi suckless dwm-niri dotfiles;};
+      specialArgs = {
+        inherit oh-my-pi suckless dwm-niri dotfiles;
+        # Flake source path, so modules can reach vendored files (honcho-bootstrap).
+        repo = self.outPath;
+      };
       modules = [
         ./configuration.nix
         home-manager.nixosModules.home-manager

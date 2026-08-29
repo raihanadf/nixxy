@@ -3,8 +3,11 @@
 # Honcho itself is not packaged in nixpkgs and is not managed declaratively
 # here: upstream ships `honcho-cli`, which owns the docker compose stack (API,
 # deriver, Postgres+pgvector, Redis) under ~/.honcho/profiles/local/ and pins
-# the image digest itself. This module only provides what that CLI needs --
-# Docker, uv, and the firewall hole for loong.
+# the image digest itself. This module provides what that CLI needs -- Docker,
+# uv, and the firewall hole for loong. Provisioning (CLI install, profile
+# generation, .env wiring, MCP worker checkout, omp/claude tokens) is handled
+# once per machine by modules/honcho-bootstrap.nix; the stack lifecycle is
+# `honcho {start,stop,restart}` (fish function, modules/fish.nix).
 #
 # Inference is local: modules/ollama.nix serves the deriver and embedding
 # models. No LLM traffic leaves the laptop.

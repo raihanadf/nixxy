@@ -3,8 +3,9 @@
 #
 # This is plastic-labs/honcho's mcp/ subdirectory: a Cloudflare Worker with
 # no bindings beyond HONCHO_API_URL, so `wrangler dev` runs it fully locally
-# -- no Cloudflare account, no deploy. ./honcho/mcp-setup.sh clones it and
-# runs `bun install` into ~/.honcho/mcp-server/mcp.
+# -- no Cloudflare account, no deploy. modules/honcho-bootstrap.nix clones
+# the repo (pinned rev) and runs `bun install` into ~/.honcho/mcp-server/mcp
+# on first boot; the checkout itself is user state, not declarative.
 #
 # Run with node, not bun: wrangler explicitly doesn't support being executed
 # under the Bun runtime (`bun run dev`/`bunx wrangler` both hit it) -- the

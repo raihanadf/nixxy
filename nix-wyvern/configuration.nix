@@ -12,6 +12,7 @@
     ./modules/ollama.nix
     ./modules/honcho.nix
     ./modules/honcho-mcp.nix
+    ./modules/honcho-bootstrap.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
