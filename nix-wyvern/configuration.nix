@@ -97,6 +97,8 @@
     vim
     neovim
     git
+    gnupg
+    openssl
   ];
 
   system.stateVersion = "26.05";
