@@ -58,6 +58,17 @@ say "Restarting the stack so .env takes effect"
 honcho stop
 honcho start
 
+# honcho-cli regenerates a "managed block" at the top of .env on every
+# stop/start -- including its own AUTH_USE_AUTH=false default, which wins
+# over the AUTH_USE_AUTH=true written above despite the "extra keys below
+# the managed block are preserved" promise (auth is apparently one of the
+# keys honcho-cli itself manages, not an extra key). Patch it back and
+# recreate just the api container to pick it up -- a plain restart won't
+# re-read the file, docker compose only applies .env at create/recreate time.
+say "Re-enforcing AUTH_USE_AUTH=true (honcho-cli's managed block defaults it off)"
+sed -i 's/^AUTH_USE_AUTH=false$/AUTH_USE_AUTH=true/' "$ENV_FILE"
+docker compose -f "$PROFILE_DIR/docker-compose.yml" up -d --force-recreate api
+
 say "Waiting for the API"
 for i in $(seq 1 60); do
   curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 && break
@@ -67,8 +78,13 @@ done
 echo "API healthy"
 
 say "Minting an admin JWT"
+# generate_jwt.py prints "Token:   <jwt>" as its last line, not the bare
+# token -- extract just the JWT (three base64url segments) rather than
+# trusting `tail -1` to be clean, or the prefix ends up baked into every
+# client's stored credential.
 ADMIN_JWT="$(docker compose -f "$PROFILE_DIR/docker-compose.yml" exec -T api \
-  /app/.venv/bin/python scripts/generate_jwt.py --admin | tr -d '\r' | tail -1)"
+  /app/.venv/bin/python scripts/generate_jwt.py --admin | tr -d '\r' \
+  | grep -oE 'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+')"
 [ -n "$ADMIN_JWT" ] || die "could not mint an admin JWT"
 
 say "Pointing the CLI at the local stack"
