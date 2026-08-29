@@ -51,11 +51,11 @@
     "dotfiles": {
       "flake": false,
       "locked": {
-        "lastModified": 1784031220,
-        "narHash": "sha256-L2/UqmV9+vxqnYCWQuXJnE4DEACXBr8NLnzsBVNEnRQ=",
+        "lastModified": 1788024330,
+        "narHash": "sha256-cWvQ+PE3FSKmEi/g+cor9t5WDC3520HuPhSwZTKcCgU=",
         "ref": "refs/heads/main",
-        "rev": "92b69d028d4a9553c3c62fad3725f68bf3aaece0",
-        "revCount": 374,
+        "rev": "26355312270740d374dd353fa048793893da59ab",
+        "revCount": 375,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/raihanadf/dotfiles.git"
