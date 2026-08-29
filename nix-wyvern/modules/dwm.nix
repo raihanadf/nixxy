@@ -60,6 +60,11 @@ in {
   # Core X font providing the "6x13" XLFD slock renders its message with.
   fonts.packages = [pkgs.xorg.fontmiscmisc];
 
+  # Daemons the dotfiles bar/scripts talk to.
+  services.upower.enable = true;
+  services.udisks2.enable = true;
+  hardware.bluetooth.enable = true;
+
   # Tools referenced by the dwm autostart / keybinds / dotfiles scripts.
   environment.systemPackages = with pkgs; [
     slock
@@ -82,5 +87,20 @@ in {
     xorg.xrdb
     xorg.xrandr
     xorg.xset
+    # bar (autostart.sh) + dotfiles scripts
+    xorg.xinput
+    xorg.xsetroot
+    xdotool
+    scrot
+    udiskie
+    psmisc
+    pywal
+    imagemagick
+    android-tools
+    pulseaudio
+    yq-go
+    python3
+    upower
+    bluez
   ];
 }

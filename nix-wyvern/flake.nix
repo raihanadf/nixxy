@@ -20,8 +20,9 @@
       url = "github:raihanadf/dwm-niri";
       flake = false;
     };
+    # submodules=1 pulls in scripts/rofi-command-palette (git submodule).
     dotfiles = {
-      url = "github:raihanadf/dotfiles";
+      url = "git+https://github.com/raihanadf/dotfiles.git?submodules=1";
       flake = false;
     };
   };
