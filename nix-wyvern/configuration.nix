@@ -79,6 +79,28 @@
   # Install firefox.
   programs.firefox.enable = true;
 
+  # Steam, game-ready. The module enables 32-bit graphics and the
+  # steam-hardware controller udev rules; the NVIDIA driver libs (64+32-bit)
+  # land in the FHS env via hardware.graphics.extraPackages, so
+  # `nvidia-offload %command%` works as a launch option for dGPU games.
+  # gamescope / mangohud / gamemode are in the FHS env for
+  # `gamescope %command%`, `MANGOHUD=1 %command%`, `gamemoderun %command%`.
+  programs.steam = {
+    enable = true;
+    extraPackages = with pkgs; [
+      gamescope
+      mangohud
+      gamemode
+    ];
+    extraCompatPackages = [pkgs.proton-ge-bin];
+    protontricks.enable = true;
+    remotePlay.openFirewall = true;
+    localNetworkGameTransfers.openFirewall = true;
+  };
+
+  # GameMode daemon: CPU governor + renice boosts while a game is running.
+  programs.gamemode.enable = true;
+
   # Enable fish system-wide (registers it in /etc/shells for login).
   programs.fish.enable = true;
 
