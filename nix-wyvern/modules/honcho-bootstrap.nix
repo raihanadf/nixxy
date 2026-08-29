@@ -140,6 +140,9 @@ in {
       pkgs.gnused
       pkgs.findutils
       pkgs.coreutils
+      # cmp, for copy_if_different. Without it every `cmp -s` test failed
+      # open, so the copies below ran on every boot instead of only on drift.
+      pkgs.diffutils
     ];
     serviceConfig = {
       Type = "oneshot";
@@ -166,7 +169,14 @@ in {
       copy_if_different() {
         if [ ! -f "$2" ] || ! cmp -s "$1" "$2"; then
           mkdir -p "$(dirname "$2")"
+          # These come from the nix store, so both source and any previous copy
+          # are mode 4xx. Plain `cp` onto an existing read-only file is EACCES,
+          # which killed the whole unit under `set -e`. Unlink first, then
+          # restore write permission -- cp preserves the source's exec bit, so
+          # claude-recall.sh stays executable and the rest stay 644.
+          rm -f "$2"
           cp "$1" "$2"
+          chmod u+w "$2"
           log "installed $2"
         fi
       }
