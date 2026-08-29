@@ -18,6 +18,9 @@
   home.packages = with pkgs; [
     kdePackages.kate
     kitty
+    # Microsoft killed the native Linux Teams client; nixpkgs' `teams` is
+    # aarch64-darwin only. This is the community Electron wrapper.
+    teams-for-linux
     wget
     claude-code
     oh-my-pi.packages.${pkgs.stdenv.hostPlatform.system}.default
