@@ -7,16 +7,11 @@
   home.username = username;
   home.homeDirectory = "/home/${username}";
 
-  # ==========================================
-  # IMPORT YOUR MAC CONFIGS HERE
-  # ==========================================
-  # Point this to wherever your Fish config lives in your repo.
-  # For example, if it's one folder up in a 'modules' directory:
   imports = [
-    ../nix-darwin/modules/fish.nix
+    ./modules/fish.nix
   ];
 
-  # The exact tools you wanted to kickstart
+  # Packages
   home.packages = with pkgs; [
     neovim
     wget
