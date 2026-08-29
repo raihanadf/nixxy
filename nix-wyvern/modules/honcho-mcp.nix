@@ -4,10 +4,13 @@
 # This is plastic-labs/honcho's mcp/ subdirectory: a Cloudflare Worker with
 # no bindings beyond HONCHO_API_URL, so `wrangler dev` runs it fully locally
 # -- no Cloudflare account, no deploy. ./honcho/mcp-setup.sh clones it and
-# runs `bun install` into ~/.honcho/mcp-server/mcp; this module just runs
-# `bun run dev` (== `wrangler dev`, default port 8787, bound to localhost)
-# as a systemd service and, like honcho-tailnet, forwards it to the tailnet
-# for loong.
+# runs `bun install` into ~/.honcho/mcp-server/mcp.
+#
+# Run with node, not bun: wrangler explicitly doesn't support being executed
+# under the Bun runtime (`bun run dev`/`bunx wrangler` both hit it) -- the
+# proxy<->workerd-inspector websocket handshake fails ("Unexpected server
+# response: 101"), which either hangs every request forever or crashes
+# outright depending on timing. bun is still fine/needed for `bun install`.
 {pkgs, ...}: {
   systemd.services.honcho-mcp = {
     description = "Honcho MCP server (local Cloudflare Worker) for OMP";
@@ -24,7 +27,7 @@
       RestartSec = 10;
       User = "raihan";
       WorkingDirectory = "/home/raihan/.honcho/mcp-server/mcp";
-      ExecStart = "${pkgs.bun}/bin/bun run dev";
+      ExecStart = "${pkgs.nodejs}/bin/node node_modules/wrangler/wrangler-dist/cli.js dev --port 8787";
     };
   };
 
