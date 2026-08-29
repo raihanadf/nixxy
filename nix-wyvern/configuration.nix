@@ -7,6 +7,7 @@
 }: {
   imports = [
     ./hardware-configuration.nix
+    ./modules/dwm.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
