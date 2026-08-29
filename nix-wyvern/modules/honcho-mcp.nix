@@ -25,7 +25,7 @@
 # HONCHO_API_URL is deliberately NOT set here as a process env var: Workers'
 # `env` bindings don't come from the OS environment (systemd `Environment=`
 # is invisible to the Worker), only from .dev.vars / wrangler.toml [vars] /
-# --var. It's written to mcp/.dev.vars by mcp-setup.sh instead -- without
+# --var. It's written to mcp/.dev.vars by honcho-bootstrap instead -- without
 # that file the Worker silently falls back to the real https://api.honcho.dev
 # and every call fails with a confusing "Invalid API key" (it's genuinely
 # talking to the wrong server, not rejecting a bad token).
@@ -39,7 +39,7 @@
       SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
     };
     serviceConfig = {
-      # The mcp-setup.sh checkout may not exist yet on first boot after this
+      # The honcho-bootstrap checkout may not exist yet on first boot after this
       # module is added -- failing and retrying is the normal path here,
       # same as honcho-tailnet.
       Restart = "always";
