@@ -1,14 +1,16 @@
-# nix-darwin Bootstrap
+# nixxy
 
-My macOS system configuration using nix-darwin. zero to ready:
+Raihan's Nix configs.
+
+- `nix-wyvern/` — NixOS laptop (`wyvern`): KDE Plasma + dwm, Home Manager.
+- `nix-darwin/` — macOS (`loong`): nix-darwin + Home Manager + Homebrew.
+
+## Apply
+
 ```bash
-# install nix
-sh <(curl -L https://nixos.org/nix/install)
+# NixOS (wyvern)
+sudo nixos-rebuild switch --flake ~/.nixxy/nix-wyvern#wyvern
 
-# clone repo
-git clone https://github.com/YOUR_USERNAME/nix-darwin.git ~/.nixxy/nix-darwin
-cd ~/.nixxy/nix-darwin
-
-# install nix-darwin
-sudo nix run nix-darwin -- switch --flake .#loong
+# macOS (loong)
+sudo nix run nix-darwin -- switch --flake ~/.nixxy/nix-darwin#loong
 ```
