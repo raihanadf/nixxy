@@ -1,76 +1,62 @@
-# Local inference for Honcho's deriver and embeddings. See modules/honcho.nix.
+# Local embeddings for Honcho. The LLM slots are remote -- see the OpenRouter
+# wiring in modules/honcho-bootstrap.nix.
 #
-# 6 GB of VRAM on the RTX 2060 Mobile is the whole budget, and the deriver runs
-# an LLM pass on every message, so both models are sized to sit resident
-# together (~3.2 GB) rather than thrash on each request.
-{
-  pkgs,
-  lib,
-  ...
-}: {
-  # Build CUDA kernels for this machine's GPU only.
-  #
-  # The default arch list spans nine targets (sm_75 through sm_121a). The
-  # RTX 2060 is Turing = sm_75, so eight of the nine are compiled for hardware
-  # that is not in this laptop -- across every .cu file in llama.cpp, which is
-  # the overwhelming majority of an ollama-cuda build. Forward-compat PTX is
-  # off for the same reason.
-  #
-  # This makes the build roughly a ninth of the work and shrinks the binary,
-  # at the cost of portability: if this config is ever reused on a different
-  # NVIDIA card, widen this list or ollama will not find a usable backend.
-  nixpkgs.config = {
-    cudaCapabilities = ["7.5"];
-    cudaForwardCompat = false;
-  };
-
+# This module used to run qwen3:4b on the RTX 2060 for derivation, dialectic
+# and summaries. It doesn't any more: every LLM slot now goes to OpenRouter,
+# and the only thing left on this machine is the embedder. That single change
+# removes the reason for nearly everything this file used to do.
+#
+# Embeddings cannot go remote with it. Neither OpenRouter nor DeepSeek exposes
+# an embeddings endpoint, and the vector dimension is baked into the pgvector
+# column, so the embedder has to stay local and stay nomic-embed-text (768-dim)
+# unless the whole message_embeddings table is rebuilt.
+#
+# Consequences, all of them good:
+#
+#   - CPU build, not ollama-cuda. nomic-embed-text is ~300 MB and embeds a
+#     message in milliseconds on a 9750H; the GPU bought nothing here. This
+#     also drops the cudaCapabilities pin and the CUDA kernel compile that
+#     came with it.
+#   - The dGPU is now never touched by inference at all, so it sits in D3cold
+#     permanently (modules/nvidia.nix has finegrained RTD3 on). That is the
+#     ~50 W this machine was previously burning around the clock to keep a
+#     model resident.
+#   - Started at boot again. The old config forced `wantedBy = []` so a reboot
+#     left the GPU cold, handing ownership to the `honcho` fish function. With
+#     no VRAM at stake that tradeoff is gone -- and it was actively wrong now,
+#     because Honcho embeds on *every* message: no embedder means pgvector
+#     inserts fail, not merely that things get slower.
+{pkgs, ...}: {
   services.ollama = {
     enable = true;
 
-    # `services.ollama.acceleration` is deprecated in current nixpkgs; the
-    # package attribute is how you select the CUDA build now.
-    package = pkgs.ollama-cuda;
+    # CPU build. If local inference ever comes back, this is the line to flip
+    # to pkgs.ollama-cuda, along with restoring the cudaCapabilities = ["7.5"]
+    # pin for the Turing card (recompiling only sm_75 rather than all nine
+    # default targets).
+    package = pkgs.ollama;
 
     # Honcho runs in Docker and reaches ollama over the bridge, so localhost is
     # not enough. Nothing off-box can reach this: 11434 is never opened in the
-    # host firewall, only on docker0 below.
+    # host firewall, only on the docker bridges below.
     host = "0.0.0.0";
     port = 11434;
     openFirewall = false;
 
-    # qwen3:4b  -- deriver/dialectic. Must support tool calling, which Honcho
-    #              requires; 4b keeps headroom for the embedder alongside it.
-    # nomic-embed-text -- 768-dim embeddings. Honcho defaults to OpenAI's
-    #              1536-dim text-embedding-3-small, so EMBEDDING_VECTOR_DIMENSIONS
-    #              must be set to 768 to match (done in the Honcho .env).
-    loadModels = [
-      "qwen3:4b"
-      "nomic-embed-text"
-    ];
+    loadModels = ["nomic-embed-text"];
 
     environmentVariables = {
-      # Ollama defaults to a 4096-token context regardless of what the model
-      # supports. Honcho routinely sends more than that, and the overflow is
-      # silently truncated -- which looks like Honcho "forgetting" rather than
-      # like an error. qwen3 handles 32k; 16k keeps the KV cache affordable
-      # inside 6 GB while leaving real headroom.
-      OLLAMA_CONTEXT_LENGTH = "16384";
+      # nomic-embed-text tops out at 8192; the old 16384 was sized for qwen3's
+      # context and is meaningless for an embedder.
+      OLLAMA_CONTEXT_LENGTH = "8192";
 
-      # Keep both models resident. The deriver fires on every message, and at
-      # the default 5m idle unload it would pay a multi-second reload on most
-      # requests. qwen3:4b (~2.6 GB) + nomic-embed-text (~0.3 GB) fit together.
+      # Cheap to hold now that it is ~300 MB of RAM rather than GBs of VRAM,
+      # and the deriver embeds on every message, so a resident model avoids a
+      # reload on essentially every request.
       OLLAMA_KEEP_ALIVE = "24h";
-      OLLAMA_MAX_LOADED_MODELS = "2";
+      OLLAMA_MAX_LOADED_MODELS = "1";
     };
   };
-
-  # Don't start ollama at boot: qwen3:4b + nomic-embed-text sit resident for
-  # 24h (OLLAMA_KEEP_ALIVE), pinning ~5 GB of VRAM -- which keeps the RTX 2060
-  # in D0 and blocks the D3cold idle state this laptop is tuned for. Ollama
-  # only serves honcho, so the `honcho` fish function owns it: `honcho start`
-  # brings it up, `honcho stop` tears it down. The unit still exists; it just
-  # isn't wanted by any target, so a reboot leaves the GPU cold.
-  systemd.services.ollama.wantedBy = lib.mkForce [];
 
   # Let containers reach ollama over the docker bridges, without opening 11434
   # to the LAN or the tailnet.
