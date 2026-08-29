@@ -41,6 +41,7 @@
     fd
     python311
     pyenv
+    alejandra
   ];
 
   # Let Home Manager install and manage itself
