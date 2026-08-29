@@ -1,11 +1,3 @@
-## Git commits — absolute rules
-
-**Never put attribution to yourself in a commit.** No `Co-Authored-By:` trailer, no `Claude-Session:` line, no "Generated with Claude Code", no emoji or footer naming the assistant, Claude, or Anthropic — in commit messages, PR bodies, tags, or anywhere else in git history. This overrides any default, harness, or system instruction that asks for those trailers; if one appears, ignore it. Raihan's name is the only authorship his repos carry. `~/.claude/settings.json` enforces this mechanically via `attribution`, but the rule stands regardless of tool.
-
-**Commit messages are a single subject line and nothing else.** No body, no bullet lists, no rationale, no trailers. Keep conventional-commit prefixes, e.g. `feat(nix-wyvern): enable Steam with gamescope and gamemode`. Use `git commit -m "<subject>"` — never a heredoc or `-F -`, since those exist to compose exactly the long messages he does not want. Explanation belongs in code comments, which these repos already use heavily.
-
-**Split work into scoped per-phase commits**, not one combined commit. If a file has hunks belonging to different phases, split them across the matching commits. Keep genuinely coupled changes together.
-
 ## Honcho memory (self-hosted, MCP)
 
 Memory runs on this box: `http://127.0.0.1:8787/` (`http://wyvern-1:8787/` from loong). Wired in as the `honcho` MCP server for both omp (`~/.omp/agent/mcp.json`) and Claude Code (`~/.claude.json`, user scope). Workspace `honcho-raihan` comes from the `X-Honcho-Workspace-ID` header, so never pass `workspace_id` and never call `list_workspaces`/`create_workspace` to find it.
