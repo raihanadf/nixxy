@@ -1,6 +1,9 @@
-{ config, pkgs, username, ... }:
-
 {
+  config,
+  pkgs,
+  username,
+  ...
+}: {
   home.username = username;
   home.homeDirectory = "/home/${username}";
 
@@ -10,7 +13,7 @@
   # Point this to wherever your Fish config lives in your repo.
   # For example, if it's one folder up in a 'modules' directory:
   imports = [
-    ../nix-darwin/modules/fish.nix 
+    ../nix-darwin/modules/fish.nix
   ];
 
   # The exact tools you wanted to kickstart
@@ -44,5 +47,5 @@
   programs.home-manager.enable = true;
 
   # Required for backwards compatibility, do not change
-  home.stateVersion = "24.11"; 
+  home.stateVersion = "24.11";
 }

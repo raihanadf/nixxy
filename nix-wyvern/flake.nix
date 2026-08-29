@@ -1,5 +1,5 @@
 {
-  description = "Home Manager configuration for Arch WSL (Wyvern)";
+  description = "Home Manager configuration for Wyvern";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
