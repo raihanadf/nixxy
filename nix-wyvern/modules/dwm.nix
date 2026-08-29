@@ -1,54 +1,64 @@
 # dwm + slock desktop, built from raihan's suckless / dwm-niri sources.
+#
+# These go in as an overlay rather than a local `let`, so `pkgs.dwm` and
+# `pkgs.slock` ARE the forks everywhere -- the nixos dwm module's own
+# `package` default (mkPackageOption pkgs "dwm") then resolves to the fork
+# with nothing pointed at it by hand, and so does `slock` in
+# environment.systemPackages below. home-manager runs with useGlobalPkgs, so
+# it sees the same set.
 {
   config,
   pkgs,
   suckless,
   dwm-niri,
   ...
-}: let
-  # slock built from the suckless repo's slock/ subdir (background-image +
-  # imlib2 patch, xinerama). Setuid is handled by security.wrappers below.
-  slock = pkgs.slock.overrideAttrs (old: {
-    src = "${suckless}/slock";
-    buildInputs =
-      (old.buildInputs or [])
-      ++ (with pkgs; [imlib2 libxext libxrandr libxinerama]);
-  });
+}: {
+  nixpkgs.overlays = [
+    (final: prev: {
+      # slock built from the suckless repo's slock/ subdir (background-image +
+      # imlib2 patch, xinerama). Setuid is handled by security.wrappers below.
+      slock = prev.slock.overrideAttrs (old: {
+        src = "${suckless}/slock";
+        buildInputs =
+          (old.buildInputs or [])
+          ++ (with prev; [imlib2 libxext libxrandr libxinerama]);
+      });
 
-  # dwm from the dwm-niri fork (scrolling layout, animations, overview).
-  # Extra libs for the composite/render/damage-based overview.
-  dwm = pkgs.dwm.overrideAttrs (old: {
-    src = dwm-niri;
-    # Drop the repo's install hook that shells out to a dotfiles script
-    # ($HOME/.dotfiles/scripts/sync-command-palette.sh), absent in the sandbox.
-    postPatch =
-      (old.postPatch or "")
-      + ''
-        sed -i '/SUDO_USER/,/fi$/d' Makefile
-      '';
-    buildInputs =
-      (old.buildInputs or [])
-      ++ (with pkgs; [
-        fontconfig
-        freetype
-        libxinerama
-        libxft
-        libxrender
-        libxcomposite
-        libxdamage
-        libxext
-      ]);
-  });
-in {
-  # dwm as a selectable session (alongside KDE Plasma) in SDDM.
-  services.xserver.windowManager.dwm = {
-    enable = true;
-    package = dwm;
-  };
+      # dwm from the dwm-niri fork (scrolling layout, animations, overview).
+      # Extra libs for the composite/render/damage-based overview.
+      dwm = prev.dwm.overrideAttrs (old: {
+        src = dwm-niri;
+        # Drop the repo's install hook that shells out to a dotfiles script
+        # ($HOME/.dotfiles/scripts/sync-command-palette.sh), absent in the sandbox.
+        postPatch =
+          (old.postPatch or "")
+          + ''
+            sed -i '/SUDO_USER/,/fi$/d' Makefile
+          '';
+        buildInputs =
+          (old.buildInputs or [])
+          ++ (with prev; [
+            fontconfig
+            freetype
+            libxinerama
+            libxft
+            libxrender
+            libxcomposite
+            libxdamage
+            libxext
+          ]);
+      });
+    })
+  ];
+
+  # dwm as a selectable session (alongside KDE Plasma) in SDDM. No `package`
+  # here: it defaults to pkgs.dwm, which the overlay above already made the
+  # dwm-niri fork.
+  services.xserver.windowManager.dwm.enable = true;
 
   # slock must be setuid root to read shadow and lock the session.
   security.wrappers.slock = {
-    source = "${slock}/bin/slock";
+    source = "${pkgs.slock}/bin/slock";
     owner = "root";
     group = "root";
     setuid = true;
