@@ -9,6 +9,7 @@
     ./hardware-configuration.nix
     ./modules/dwm.nix
     ./modules/nvidia.nix
+    ./modules/power.nix
     ./modules/ollama.nix
     ./modules/honcho.nix
     ./modules/honcho-mcp.nix
