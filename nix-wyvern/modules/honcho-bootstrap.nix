@@ -125,6 +125,10 @@ in {
     after = ["network-online.target"];
     wants = ["network-online.target"];
     before = ["honcho-mcp.service"];
+    # `before` only orders a unit, it never activates one -- without this the
+    # service would never run and none of the repo-owned agent files below
+    # would ever land on a fresh machine.
+    wantedBy = ["multi-user.target"];
     path = [
       pkgs.git
       pkgs.uv
