@@ -3,7 +3,11 @@
 # 6 GB of VRAM on the RTX 2060 Mobile is the whole budget, and the deriver runs
 # an LLM pass on every message, so both models are sized to sit resident
 # together (~3.2 GB) rather than thrash on each request.
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   # Build CUDA kernels for this machine's GPU only.
   #
   # The default arch list spans nine targets (sm_75 through sm_121a). The
@@ -59,6 +63,14 @@
       OLLAMA_MAX_LOADED_MODELS = "2";
     };
   };
+
+  # Don't start ollama at boot: qwen3:4b + nomic-embed-text sit resident for
+  # 24h (OLLAMA_KEEP_ALIVE), pinning ~5 GB of VRAM -- which keeps the RTX 2060
+  # in D0 and blocks the D3cold idle state this laptop is tuned for. Ollama
+  # only serves honcho, so the `honcho` fish function owns it: `honcho start`
+  # brings it up, `honcho stop` tears it down. The unit still exists; it just
+  # isn't wanted by any target, so a reboot leaves the GPU cold.
+  systemd.services.ollama.wantedBy = lib.mkForce [];
 
   # Let containers reach ollama over the docker bridges, without opening 11434
   # to the LAN or the tailnet.

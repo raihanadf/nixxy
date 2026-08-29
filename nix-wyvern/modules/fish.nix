@@ -74,6 +74,76 @@
           cat $argv
         end
       '';
+      # Manage the self-hosted honcho stack: ollama (local inference) + docker
+      # compose (API/deriver/redis/postgres, project "honcho-local") + the
+      # local MCP worker + the tailnet forwards for loong. Shadows the
+      # honcho-cli binary on PATH -- `command honcho` still reaches the CLI.
+      # `restore [dumpfile]` loads a pg_dump from ~/.honcho/backups (or the
+      # given file) into an empty database.
+      honcho = ''
+        function honcho
+            set -l cmd $argv[1]
+            set -l project_dir $HOME/.honcho/profiles/local
+            set -l units honcho-mcp.service honcho-mcp-tailnet.service honcho-tailnet.service
+
+            switch "$cmd"
+                case start
+                    # ollama first: it pins VRAM (GPU leaves D3cold), so it
+                    # only runs while the stack is wanted
+                    sudo systemctl start ollama
+                    for i in (seq 1 60)
+                        if wget -q -O /dev/null http://127.0.0.1:11434/api/tags
+                            break
+                        end
+                        sleep 1
+                    end
+                    docker compose -p honcho-local --project-directory $project_dir up -d
+                    or return 1
+                    # worker is useless until the API is healthy; postgres
+                    # needs a few seconds on a cold start
+                    for i in (seq 1 30)
+                        if test (docker inspect -f '{{.State.Health.Status}}' honcho-local-api-1 2>/dev/null) = healthy
+                            break
+                        end
+                        sleep 1
+                    end
+                    sudo systemctl start $units
+                case stop
+                    sudo systemctl stop $units
+                    docker compose -p honcho-local --project-directory $project_dir stop
+                    sudo systemctl stop ollama
+                case restart
+                    honcho stop
+                    or return 1
+                    honcho start
+                case restore
+                    if not docker ps --format '{{.Names}}' | grep -q '^honcho-local-database-1$'
+                        echo "honcho: stack not running; run 'honcho start' first" >&2
+                        return 1
+                    end
+                    set -l dump $argv[2]
+                    if test -z "$dump"
+                        set dump (ls -1t $HOME/.honcho/backups/honcho-*.sql.gz 2>/dev/null | head -1)
+                    end
+                    if test -z "$dump"
+                        echo "honcho: no backup found in ~/.honcho/backups" >&2
+                        return 1
+                    end
+                    if not test -f "$dump"
+                        echo "honcho: no such file: $dump" >&2
+                        return 1
+                    end
+                    echo "honcho: restoring $dump (drops the current database)"
+                    docker stop honcho-local-api-1
+                    docker exec honcho-local-database-1 psql -U postgres -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" >/dev/null
+                    gunzip -c "$dump" | docker exec -i honcho-local-database-1 psql -U postgres postgres
+                    docker start honcho-local-api-1
+                case '*'
+                    echo "usage: honcho {start,stop,restart,restore [dumpfile]}" >&2
+                    return 1
+            end
+        end
+      '';
     };
 
     # Interactive shell init
