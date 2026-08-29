@@ -1,0 +1,102 @@
+diff --git a/mcp/src/config.ts b/mcp/src/config.ts
+index ed70bbc..80fe6a8 100644
+--- a/mcp/src/config.ts
++++ b/mcp/src/config.ts
+@@ -10,6 +10,13 @@ export interface HonchoConfig {
+ export interface Env {
+   HONCHO_API_URL?: string;
+   ALERT_WEBHOOK_URL?: string;
++  /**
++   * Comma-separated allowlist of tool names to expose. Unset or empty means
++   * every tool, which is upstream's behaviour. Set it to cut the tools/list
++   * payload: the full surface is 31 tools / ~6.3k tokens, and a memory client
++   * realistically needs under a dozen.
++   */
++  HONCHO_MCP_TOOLS?: string;
+ }
+ 
+ /**
+diff --git a/mcp/src/index.ts b/mcp/src/index.ts
+index 69dc3dc..4cca8e4 100644
+--- a/mcp/src/index.ts
++++ b/mcp/src/index.ts
+@@ -108,11 +108,14 @@ export default {
+     }
+ 
+     try {
+-      const server = createServer({
+-        config,
+-        clientFor: createClientFactory(config),
+-        unscoped: createUnscopedClient(config),
+-      });
++      const server = createServer(
++        {
++          config,
++          clientFor: createClientFactory(config),
++          unscoped: createUnscopedClient(config),
++        },
++        env.HONCHO_MCP_TOOLS,
++      );
+       const handler = createMcpHandler(server, {
+         route: "/",
+         corsOptions: {
+diff --git a/mcp/src/server.ts b/mcp/src/server.ts
+index 363cf9c..7780f05 100644
+--- a/mcp/src/server.ts
++++ b/mcp/src/server.ts
+@@ -7,7 +7,29 @@ import { register as registerConclusionTools } from "./tools/conclusions.js";
+ import { register as registerSystemTools } from "./tools/system.js";
+ import instructions from "../instructions.md";
+ 
+-export function createServer(ctx: ToolContext): McpServer {
++/**
++ * Wrap the server so `registerTool` silently drops anything outside `allow`.
++ *
++ * Filtering here rather than in the five tool modules keeps this a single
++ * seam: upstream can add, rename or reorganise tools freely and this keeps
++ * working. An empty or unset allowlist disables filtering entirely, so the
++ * default behaviour is unchanged.
++ */
++function withToolAllowlist(server: McpServer, allow: Set<string>): McpServer {
++  if (allow.size === 0) return server;
++  return new Proxy(server, {
++    get(target, prop, receiver) {
++      if (prop !== "registerTool") return Reflect.get(target, prop, receiver);
++      return (name: string, ...rest: unknown[]) => {
++        if (!allow.has(name)) return undefined;
++        return (target as unknown as Record<string, (...a: unknown[]) => unknown>)
++          .registerTool(name, ...rest);
++      };
++    },
++  });
++}
++
++export function createServer(ctx: ToolContext, tools?: string): McpServer {
+   const server = new McpServer(
+     {
+       name: "Honcho MCP Server",
+@@ -16,11 +38,19 @@ export function createServer(ctx: ToolContext): McpServer {
+     { instructions },
+   );
+ 
+-  registerWorkspaceTools(server, ctx);
+-  registerPeerTools(server, ctx);
+-  registerSessionTools(server, ctx);
+-  registerConclusionTools(server, ctx);
+-  registerSystemTools(server, ctx);
++  const allow = new Set(
++    (tools ?? "")
++      .split(",")
++      .map((t) => t.trim())
++      .filter(Boolean),
++  );
++  const target = withToolAllowlist(server, allow);
++
++  registerWorkspaceTools(target, ctx);
++  registerPeerTools(target, ctx);
++  registerSessionTools(target, ctx);
++  registerConclusionTools(target, ctx);
++  registerSystemTools(target, ctx);
+ 
+   return server;
+ }

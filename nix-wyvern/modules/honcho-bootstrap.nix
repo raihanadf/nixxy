@@ -140,7 +140,32 @@
   '';
 
   # The MCP worker (.dev.vars): points the Cloudflare Worker at the local API.
-  devVars = "HONCHO_API_URL=http://127.0.0.1:8000\n";
+  # The MCP worker (.dev.vars): points the Cloudflare Worker at the local API,
+  # and trims the tool surface it advertises.
+  #
+  # Upstream registers 31 tools -- roughly 6.3k tokens of tools/list payload on
+  # every agent connection, with five near-duplicate ways to ask "what do you
+  # know about raihan" (search / query_conclusions / get_representation /
+  # get_peer_context / chat). The allowlist below is what recall, retention and
+  # the bootstrap actually call, and cuts that to ~2.7k tokens.
+  #
+  # create_session, add_peers_to_session and get_peer_context are required by
+  # hooks/honcho-recall.sh; create_workspace is required by the workspace
+  # ensure step further down. Dropping any of those four breaks provisioning.
+  mcpTools = builtins.concatStringsSep "," [
+    "search"
+    "query_conclusions"
+    "get_peer_context"
+    "chat"
+    "create_conclusions"
+    "delete_conclusion"
+    "add_messages_to_session"
+    "create_session"
+    "add_peers_to_session"
+    "create_workspace"
+  ];
+
+  devVars = "HONCHO_API_URL=http://127.0.0.1:8000\nHONCHO_MCP_TOOLS=${mcpTools}\n";
 
   # Pinned honcho repo revision the worker is checked out at.
   honchoRev = "82a92429b888727b2236820b863256067c7edc80";
@@ -323,7 +348,28 @@ in {
         (cd "$MCPDIR" && bun install)
       fi
 
-      if [ ! -f "$MCPDIR/.dev.vars" ]; then
+      # The tool allowlist is a source patch: upstream has no filter hook, and
+      # the worker is a pinned checkout, so the change cannot live in config.
+      # Idempotent -- a clean --reverse --check means it is already applied.
+      # A failure to apply is logged rather than fatal, but it does mean the
+      # patch needs refreshing against the new honchoRev.
+      PATCH="$HONCHO_DIR/mcp-tool-allowlist.patch"
+      if [ -f "$PATCH" ]; then
+        if git -C "$MCPROOT" apply --reverse --check "$PATCH" >/dev/null 2>&1; then
+          : # already applied
+        elif git -C "$MCPROOT" apply --check "$PATCH" >/dev/null 2>&1; then
+          git -C "$MCPROOT" apply "$PATCH"
+          log "applied mcp-tool-allowlist.patch"
+        else
+          log "ERROR: mcp-tool-allowlist.patch does not apply at rev $REV."
+          log "       Refresh it against the new revision, or the MCP server"
+          log "       will advertise all 31 tools instead of the allowlist."
+        fi
+      fi
+
+      # Managed, not write-once: the allowlist lives in here, so a change to
+      # mcpTools has to reach an already-provisioned machine.
+      if [ ! -f "$MCPDIR/.dev.vars" ] || [ "$(cat "$MCPDIR/.dev.vars")" != "$(printf '${devVars}')" ]; then
         log "writing worker .dev.vars"
         printf '${devVars}' > "$MCPDIR/.dev.vars"
       fi
