@@ -1,73 +1,66 @@
 #!/usr/bin/env bash
-# Claude Code SessionStart hook: recall Honcho memory for this project.
+# Claude Code SessionStart + UserPromptSubmit hook: recall Honcho memory.
 #
-# Mirrors omp's ~/.omp/agent/extensions/honcho.ts (same peers "raihan"/"omp",
-# same session-id derivation) so Claude Code and omp share one memory instead
-# of each tool building its own silo. Reads the honcho MCP server's URL/
-# headers from Claude Code's own ~/.claude.json -- credentials live in
-# exactly one place, not duplicated into this script.
+# One store: raihan's own representation (observer raihan, observed raihan).
+# The "omp" peer only sends messages and observes nobody, so the deriver no
+# longer writes every conclusion twice. Recall is not session-scoped: what
+# honcho knows about raihan follows him across projects, tools and machines.
+#
+# SessionStart (startup, resume, clear, compact) injects the core memory.
+# Each prompt then runs a semantic search with the prompt text and injects
+# only conclusions this Claude session has not seen yet, so nothing is
+# repeated and most prompts add zero tokens. Credentials come from the honcho
+# MCP entry in ~/.claude.json, the same place Claude Code itself reads.
 set -euo pipefail
 
 USER_PEER="raihan"
-AGENT_PEER="omp"
 CONFIG_FILE="$HOME/.claude.json"
+STATE_DIR="$HOME/.cache/honcho-recall"
+mkdir -p "$STATE_DIR"
 
-URL=$(jq -r '.mcpServers.honcho.url // empty' "$CONFIG_FILE" 2>/dev/null)
-AUTH=$(jq -r '.mcpServers.honcho.headers.Authorization // empty' "$CONFIG_FILE" 2>/dev/null)
-WORKSPACE=$(jq -r '.mcpServers.honcho.headers["X-Honcho-Workspace-ID"] // empty' "$CONFIG_FILE" 2>/dev/null)
-[ -n "$URL" ] && [ -n "$AUTH" ] || exit 0
+input="$(cat)"
+event="$(echo "$input" | jq -r '.hook_event_name')"
+cc_session="$(echo "$input" | jq -r '.session_id')"
+seen_file="$STATE_DIR/$cc_session"
+touch "$seen_file"
 
-# Same project shares one memory across clones/machines/branches (wyvern and
-# loong are both my own laptops); unrelated projects that happen to share a
-# directory name should not. Key off the git remote (origin, or the first
-# configured remote) when one exists -- normalized so git@host:owner/repo.git
-# and https://host/owner/repo agree -- and only fall back to the cwd basename
-# for non-git directories (e.g. $HOME itself). Mirrors gitRemoteId() in
-# extensions/honcho.ts exactly, so both tools land in the same bucket.
-git_remote_id() {
-  local url first
-  url="$(git -C "$PWD" remote get-url origin 2>/dev/null)"
-  if [ -z "$url" ]; then
-    first="$(git -C "$PWD" remote 2>/dev/null | head -1)"
-    [ -n "$first" ] || return 1
-    url="$(git -C "$PWD" remote get-url "$first" 2>/dev/null)"
-  fi
-  [ -n "$url" ] || return 1
-  url="${url%.git}"
-  case "$url" in
-    git@*) echo "${url#git@}" | sed 's/:/\//' ;;
-    ssh://*) echo "${url#ssh://}" | sed 's#^git@##' ;;
-    http://*|https://*) echo "$url" | sed -E 's#^https?://##' ;;
-    *) echo "$url" ;;
-  esac
-}
+URL=$(jq -r '.mcpServers.honcho.url // empty' "$CONFIG_FILE")
+AUTH=$(jq -r '.mcpServers.honcho.headers.Authorization // empty' "$CONFIG_FILE")
+WORKSPACE=$(jq -r '.mcpServers.honcho.headers["X-Honcho-Workspace-ID"] // empty' "$CONFIG_FILE")
+if [ -z "$URL" ] || [ -z "$AUTH" ]; then
+  echo "honcho memory offline: no honcho url/auth in $CONFIG_FILE"
+  exit 0
+fi
 
-raw_id="$(git_remote_id || true)"
-[ -n "$raw_id" ] || raw_id="$(basename "$PWD")"
-session_id="$(echo "$raw_id" | sed -E 's/^[^a-zA-Z0-9]+//; s/[^a-zA-Z0-9_-]/-/g')"
-[ -n "$session_id" ] || exit 0
+if [ "$event" = "SessionStart" ]; then
+  : >"$seen_file"
+  args="$(jq -nc --arg p "$USER_PEER" '{peer_id: $p, max_conclusions: 40}')"
+else
+  prompt="$(echo "$input" | jq -r '.prompt')"
+  args="$(jq -nc --arg p "$USER_PEER" --arg q "${prompt:0:500}" '{peer_id: $p, search_query: $q, max_conclusions: 8}')"
+fi
 
-call() {
-  curl -sS -m 8 "$URL" -X POST \
-    -H "Authorization: $AUTH" \
-    -H "X-Honcho-Workspace-ID: $WORKSPACE" \
-    -H "Content-Type: application/json" \
-    -H "Accept: application/json, text/event-stream" \
-    -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"$1\",\"arguments\":$2}}" \
-    2>/dev/null | grep '^data: ' | head -1 | sed 's/^data: //'
-}
+body="$(jq -nc --argjson args "$args" '{jsonrpc: "2.0", id: 1, method: "tools/call", params: {name: "get_peer_context", arguments: $args}}')"
+frame="$(curl -sS -m 6 "$URL" -X POST \
+  -H "Authorization: $AUTH" \
+  -H "X-Honcho-Workspace-ID: $WORKSPACE" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d "$body" 2>/dev/null | grep '^data: ' | head -1 | sed 's/^data: //' || true)"
+if [ -z "$frame" ] || echo "$frame" | jq -e '.error or .result.isError' >/dev/null; then
+  # only worth saying once per session, not on every prompt
+  [ "$event" = "SessionStart" ] && echo "honcho memory offline: $URL did not answer (wyvern down or token expired)"
+  exit 0
+fi
 
-# get-or-create session + peers (cheap, idempotent)
-call create_session "{\"session_id\":\"$session_id\"}" >/dev/null || exit 0
-call add_peers_to_session "{\"session_id\":\"$session_id\",\"peers\":[{\"peer_id\":\"$USER_PEER\",\"observe_me\":true,\"observe_others\":true},{\"peer_id\":\"$AGENT_PEER\",\"observe_me\":false,\"observe_others\":true}]}" >/dev/null || exit 0
+context="$(echo "$frame" | jq -r '.result.content[0].text')"
+card=""
+# the peer card never changes mid-session, so only the session start carries it
+[ "$event" = "SessionStart" ] && card="$(echo "$context" | jq -r '.peer_card // empty | if type == "array" then join("\n") else . end')"
+# one conclusion per line; "[2026-10-07 18:08:25] text" -> "[2026-10-07] text", the time of day is noise
+new_lines="$(echo "$context" | jq -r '.representation // ""' | grep '^\[' \
+  | sed -E 's/^\[([0-9]{4}-[0-9]{2}-[0-9]{2}) [0-9:]+\]/[\1]/' | grep -v -x -F -f "$seen_file" || true)"
+[ -n "$new_lines" ] || [ -n "$card" ] || exit 0
 
-frame="$(call get_peer_context "{\"peer_id\":\"$USER_PEER\",\"session_id\":\"$session_id\"}")"
-[ -n "$frame" ] || exit 0
-
-inner="$(echo "$frame" | jq -r '.result.content[0].text // empty' 2>/dev/null)"
-[ -n "$inner" ] && [ "$inner" != "null" ] || exit 0
-
-known="$(echo "$inner" | jq -r '[.representation, .peer_card] | map(select(. != null and . != "")) | join("\n")' 2>/dev/null)"
-[ -n "$known" ] && [ "$known" != "null" ] || exit 0
-
-printf '<honcho-memory session="%s">\n%s\n</honcho-memory>\n' "$session_id" "$known"
+echo "$new_lines" >>"$seen_file"
+printf '<honcho-memory>\n%s%s\n</honcho-memory>\n' "${card:+$card$'\n'}" "$new_lines"

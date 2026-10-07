@@ -1,0 +1,10 @@
+{
+  "configuration": {
+    "summary": {
+      "enabled": false
+    },
+    "reasoning": {
+      "custom_instructions": "These messages are coding-agent sessions (Claude Code / omp) between raihan and an AI assistant. Most turns are one-off task requests; they are NOT facts about raihan. Extract ONLY durable knowledge a future session would need:\n- standing rules and preferences raihan states for how agents must work (\"always\", \"never\", \"from now on\", corrections of the assistant)\n- decisions raihan makes that change how a project or tool works, with the project name\n- stable facts about raihan, his machines, accounts, projects, people he works with, and his goals\n- explicit 'remember this' requests\nDo NOT extract: the task he asked for this turn (\"raihan asked to check disk space\"), approvals like \"yes do it\", questions he asked, greetings, progress chatter, anything the assistant said that raihan did not confirm, or secrets/tokens/passwords.\nOne conclusion per fact, under 300 characters, start with the absolute date (YYYY-MM-DD) when the rule or decision was made, and name the project when it is project-specific. If a message only restates a rule already given, extract nothing. Returning zero conclusions is normal and expected for most messages."
+    }
+  }
+}

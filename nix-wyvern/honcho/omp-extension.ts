@@ -1,13 +1,17 @@
-// honcho memory wiring: recalls context at session start, records each turn at turn end.
-// talks straight to the honcho mcp endpoint declared in ~/.omp/agent/mcp.json, so the
-// url, bearer token and workspace header live in exactly one place.
+// honcho memory wiring: recalls what honcho knows before each prompt, records each finished
+// prompt at agent end. talks straight to the honcho mcp endpoint declared in
+// ~/.omp/agent/mcp.json, so the url, bearer token and workspace header live in exactly one place.
+// claude code does the same through ~/.claude/hooks/honcho-{recall,retain}.sh; both tools share
+// the retain queue below, so an exchange written while wyvern is down is sent later, not lost.
 import { execSync } from "node:child_process";
+import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { basename } from "node:path";
 import type { ExtensionAPI } from "@oh-my-pi/pi-coding-agent";
 
 const MCP_CONFIG = `${process.env.HOME}/.omp/agent/mcp.json`;
 const USER_PEER = "raihan";
 const AGENT_PEER = "omp";
+const QUEUE = `${process.env.HOME}/.cache/honcho-retain/queue`;
 
 let server: { url: string; headers: Record<string, string> } | undefined;
 
@@ -48,8 +52,8 @@ async function ensureSession(sessionId: string) {
 	await call("add_peers_to_session", {
 		session_id: sessionId,
 		peers: [
-			{ peer_id: USER_PEER, observe_me: true, observe_others: true },
-			{ peer_id: AGENT_PEER, observe_me: false, observe_others: true },
+			{ peer_id: USER_PEER, observe_me: true, observe_others: false },
+			{ peer_id: AGENT_PEER, observe_me: false, observe_others: false },
 		],
 	});
 	ready.add(sessionId);
@@ -103,22 +107,64 @@ function messageText(content: unknown): string {
 		.trim();
 }
 
-// the prompt that opened this turn and the reply that closed it
-function lastExchange(entries: readonly { type: string; message?: { role?: string; content?: unknown } }[]) {
+// "[2026-10-07 18:08:25] text" -> "[2026-10-07] text": the time of day is noise for the model
+function conclusionLines(representation: string | undefined): string[] {
+	return (representation ?? "")
+		.split("\n")
+		.filter((line) => line.startsWith("["))
+		.map((line) => line.replace(/^\[(\d{4}-\d{2}-\d{2}) [\d:]+\]/, "[$1]"));
+}
+
+// honcho caps a message at 25000 chars; a long paste becomes several messages, not a rejected one
+function parts(peerId: string, text: string) {
+	const out = [];
+	for (let i = 0; i < text.length; i += 24_000) out.push({ peer_id: peerId, content: text.slice(i, i + 24_000) });
+	return out;
+}
+
+// the prompt that opened this agent run and the final reply that closed it
+function lastExchange(messages: readonly { role?: string; content?: unknown }[]) {
 	let user = "";
 	let assistant = "";
-	for (const entry of entries) {
-		if (entry.type !== "message") continue;
-		const role = entry.message?.role;
-		if (role === "user") {
-			user = messageText(entry.message?.content);
+	for (const message of messages) {
+		if (message.role === "user") {
+			user = messageText(message.content);
 			assistant = "";
-		} else if (role === "assistant") {
-			const text = messageText(entry.message?.content);
+		} else if (message.role === "assistant") {
+			const text = messageText(message.content);
 			if (text) assistant = text;
 		}
 	}
 	return { user, assistant };
+}
+
+// send every queued exchange oldest first; stop at the first failure so order is kept.
+// a mkdir lock keeps two sessions (or omp and claude code) from sending the same file twice.
+async function drainQueue() {
+	const lock = `${QUEUE}/.lock`;
+	try {
+		mkdirSync(lock);
+	} catch {
+		if (Date.now() - statSync(lock).mtimeMs < 120_000) return;
+		rmSync(lock, { recursive: true, force: true });
+		mkdirSync(lock);
+	}
+	try {
+		for (const file of readdirSync(QUEUE).filter((f) => f.endsWith(".json")).sort()) {
+			const payload = JSON.parse(readFileSync(`${QUEUE}/${file}`, "utf8"));
+			await ensureSession(payload.session_id);
+			try {
+				await call("add_messages_to_session", payload);
+			} catch (error) {
+				// the session may have been deleted on the server; set it up again next time
+				ready.delete(payload.session_id);
+				throw error;
+			}
+			unlinkSync(`${QUEUE}/${file}`);
+		}
+	} finally {
+		rmSync(lock, { recursive: true, force: true });
+	}
 }
 
 export default function honcho(pi: ExtensionAPI) {
@@ -126,56 +172,67 @@ export default function honcho(pi: ExtensionAPI) {
 	pi.setLabel("Honcho Memory");
 	pi.logger?.debug?.(`honcho extension loaded, endpoint from ${MCP_CONFIG}`);
 
-	// pull what honcho knows and hand it to the model with the first prompt of the session
-	pi.on("session_start", async (_event, ctx) => {
+	// conclusions this session already carries in its context. the session start sends the core
+	// memory once; each later prompt only adds conclusions relevant to it that are not in here yet.
+	// the messages persist in the session (append only), so the prompt cache prefix stays valid.
+	let seen = new Set<string>();
+	let primed = false;
+	const reset = () => {
+		seen = new Set();
+		primed = false;
+	};
+	for (const event of ["session_start", "session_switch", "session_branch", "session_tree", "session_compact"] as const) {
+		pi.on(event, async () => reset());
+	}
+
+	pi.on("before_agent_start", async (event, ctx) => {
 		if (!ctx.hasUI) return;
 		try {
-			const id = honchoSessionId(ctx.cwd);
-			await ensureSession(id);
-			const context = JSON.parse(await call("get_peer_context", { peer_id: USER_PEER, session_id: id }));
-			// a cold peer answers with an empty representation and no card; injecting that is pure noise
-			const known = [context.representation?.trim(), context.peer_card].filter(Boolean).join("\n");
-			if (!known) {
-				ctx.ui.setStatus("honcho", "memory empty");
-				return;
-			}
-			pi.sendMessage(
-				{
-					customType: "honcho.recall",
-					content: `<honcho-memory session="${id}">\n${known}\n</honcho-memory>`,
+			const args = primed
+				? { peer_id: USER_PEER, search_query: event.prompt.slice(0, 500), max_conclusions: 8 }
+				: { peer_id: USER_PEER, max_conclusions: 40 };
+			const context = JSON.parse(await call("get_peer_context", args));
+			const lines = conclusionLines(context.representation).filter((line) => !seen.has(line));
+			const card = primed ? "" : [context.peer_card].flat().filter(Boolean).join("\n");
+			primed = true;
+			ctx.ui.setStatus("honcho", "◇ mem");
+			if (!lines.length && !card) return;
+			for (const line of lines) seen.add(line);
+			return {
+				message: {
+					customType: "honcho-memory",
+					content: `<honcho-memory>\n${[card, ...lines].filter(Boolean).join("\n")}\n</honcho-memory>`,
 					display: false,
-					attribution: "user",
 				},
-				{ deliverAs: "nextTurn" },
-			);
-			ctx.ui.setStatus("honcho", "memory loaded");
+			};
 		} catch (error) {
 			pi.logger?.error?.(`honcho recall failed: ${String(error)}`);
-			ctx.ui.setStatus("honcho", "memory offline");
+			ctx.ui.setStatus("honcho", "× mem");
 		}
 	});
 
-	// record the finished exchange; subagents and print mode have no ui and are skipped
-	pi.on("turn_end", async (_event, ctx) => {
-		if (!ctx.hasUI) return;
-		const { user, assistant } = lastExchange(ctx.sessionManager.getBranch() as never);
+	// record the finished prompt once per agent run (turn_end would also catch mid-run narration).
+	// it goes to the queue file first, so a crash or an unreachable wyvern never drops it.
+	// subagents and print mode have no ui and are skipped.
+	pi.on("agent_end", async (event, ctx) => {
+		if (!ctx.hasUI || event.willContinue) return;
+		const { user, assistant } = lastExchange(event.messages as never);
 		if (!user || !assistant) return;
 		const fingerprint = `${user}\u0000${assistant}`;
 		if (fingerprint === lastWritten) return;
+		lastWritten = fingerprint;
 		try {
-			const id = honchoSessionId(ctx.cwd);
-			await ensureSession(id);
-			await call("add_messages_to_session", {
-				session_id: id,
-				messages: [
-					{ peer_id: USER_PEER, content: user },
-					{ peer_id: AGENT_PEER, content: assistant },
-				],
-			});
-			lastWritten = fingerprint;
+			const payload = {
+				session_id: honchoSessionId(ctx.cwd),
+				messages: [...parts(USER_PEER, user), ...parts(AGENT_PEER, assistant)],
+			};
+			mkdirSync(QUEUE, { recursive: true });
+			const name = `${Math.floor(Date.now() / 1000)}-omp-${process.pid}-${Math.random().toString(36).slice(2, 8)}.json`;
+			writeFileSync(`${QUEUE}/${name}`, JSON.stringify(payload));
+			await drainQueue();
 		} catch (error) {
-			pi.logger?.error?.(`honcho retain failed: ${String(error)}`);
-			ctx.ui.setStatus("honcho", "retain failed");
+			pi.logger?.error?.(`honcho retain failed (kept in ${QUEUE}): ${String(error)}`);
+			ctx.ui.setStatus("honcho", "! retain queued");
 		}
 	});
 
@@ -198,10 +255,7 @@ export default function honcho(pi: ExtensionAPI) {
 				}
 				if (verb === "ask") {
 					if (!query) throw new Error("ask needs a question");
-					ctx.ui.notify(
-						await call("chat", { peer_id: AGENT_PEER, target_peer_id: USER_PEER, session_id: id, query }),
-						"info",
-					);
+					ctx.ui.notify(await call("chat", { peer_id: USER_PEER, query }), "info");
 					return;
 				}
 				throw new Error(`unknown subcommand "${verb}"`);

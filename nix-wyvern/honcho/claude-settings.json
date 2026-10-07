@@ -7,7 +7,29 @@
           {
             "type": "command",
             "command": "bash /home/raihan/.claude/hooks/honcho-recall.sh",
-            "timeout": 5
+            "timeout": 8
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/raihan/.claude/hooks/honcho-recall.sh",
+            "timeout": 8
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/raihan/.claude/hooks/honcho-retain.sh",
+            "timeout": 10
           }
         ]
       }

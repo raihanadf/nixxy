@@ -37,10 +37,10 @@
   # never revisited, so editing it here did nothing to an already-provisioned
   # machine. The markers below let the bootstrap replace a stale block in
   # place; bump envVersion whenever this template changes.
-  envVersion = "3";
+  envVersion = "4";
 
   envTemplate = ''
-    # >>> nixxy-managed v3 >>>
+    # >>> nixxy-managed v${envVersion} >>>
     # Generated from modules/honcho-bootstrap.nix. Edits here are overwritten
     # when envVersion changes -- change the template, not this file.
 
@@ -122,11 +122,13 @@
     SUMMARY_MODEL_CONFIG__THINKING_EFFORT=low
 
     # [dream] background consolidation
-    # Still off, but for a new reason. It used to be off because a dream run
-    # occupied the GPU and starved the deriver; inference is remote now, so the
-    # remaining cost is money rather than contention. Flip to true to try it --
-    # both slots are pinned so it can never fall through to OpenAI.
-    DREAM_ENABLED=false
+    # On since 2026-10-08. A dream merges duplicate conclusions, deletes
+    # redundant or contradicted ones and writes deductions, so memory stays
+    # clean without hand pruning. Inference is remote (Hy3), so the only cost
+    # is money, and it runs at most every 8h after 20 new conclusions. Both
+    # slots are pinned so it can never fall through to OpenAI.
+    DREAM_ENABLED=true
+    DREAM_DOCUMENT_THRESHOLD=20
     DREAM_DEDUCTION_MODEL_CONFIG__TRANSPORT=openai
     DREAM_DEDUCTION_MODEL_CONFIG__MODEL=tencent/hy3
     DREAM_DEDUCTION_MODEL_CONFIG__OVERRIDES__BASE_URL=https://openrouter.ai/api/v1
@@ -198,6 +200,8 @@ in {
       pkgs.gnused
       pkgs.findutils
       pkgs.coreutils
+      # the workspace config PUT below
+      pkgs.curl
       # cmp, for copy_if_different. Without it every `cmp -s` test failed
       # open, so the copies below ran on every boot instead of only on drift.
       pkgs.diffutils
@@ -459,6 +463,7 @@ in {
       # --- repo-owned agent files: the repo is the source of truth --------------
       copy_if_different "$HONCHO_DIR/omp-extension.ts" "$HOME/.omp/agent/extensions/honcho.ts"
       copy_if_different "$HONCHO_DIR/claude-recall.sh" "$HOME/.claude/hooks/honcho-recall.sh"
+      copy_if_different "$HONCHO_DIR/claude-retain.sh" "$HOME/.claude/hooks/honcho-retain.sh"
       copy_if_different "$HONCHO_DIR/claude-statusline.sh" "$HOME/.claude/statusline-command.sh"
       copy_if_different "$HONCHO_DIR/claude-settings.json" "$HOME/.claude/settings.json"
       copy_if_different "$HONCHO_DIR/agent-context.md" "$HOME/.omp/agent/AGENTS.md"
@@ -468,6 +473,18 @@ in {
         copy_if_different "$HONCHO_DIR/skills/$s/SKILL.md" "$HOME/.omp/skills/$s/SKILL.md"
       done
       copy_if_different "$HONCHO_DIR/skills/caveman/SKILL.md" "$HOME/.omp/skills/caveman/SKILL.md"
+      # Workspace configuration lives in honcho's database, not in .env: the
+      # deriver's custom instructions (keep only durable facts) and summaries
+      # off (nothing reads them). PUT every boot so a rebuilt database gets it
+      # back; the stack may be down (honcho stop), so a failure only logs.
+      if [ -f "$HOME/.honcho/.admin-jwt" ]; then
+        curl -sf -o /dev/null -X PUT http://127.0.0.1:8000/v3/workspaces/honcho-raihan \
+          -H "Authorization: Bearer $(cat "$HOME/.honcho/.admin-jwt")" \
+          -H "Content-Type: application/json" \
+          -d @"$HONCHO_DIR/workspace-config.json" \
+          || log "workspace config not applied -- stack down?"
+      fi
+
       # user preference file: only when missing, never clobber local edits
       if [ ! -f "$HOME/.omp/agent/config.yml" ]; then
         cp "$HONCHO_DIR/omp-config.yml" "$HOME/.omp/agent/config.yml"
