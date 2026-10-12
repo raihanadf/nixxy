@@ -61,15 +61,33 @@
     nvidiaSettings = true;
 
     powerManagement.enable = true;
-    powerManagement.finegrained = true;
+    powerManagement.finegrained = false; # default: dedicated mode
 
     prime = {
-      offload = {
-        enable = true;
-        enableOffloadCmd = true; # provides `nvidia-offload`
-      };
+      sync.enable = true; # default: dedicated mode + extended displays supported
       intelBusId = "PCI:0:2:0";
       nvidiaBusId = "PCI:1:0:0";
+    };
+  };
+
+  # pass-through wrapper for nvidia-offload when in dedicated sync mode
+  environment.systemPackages = [
+    (pkgs.writeShellScriptBin "nvidia-offload" ''
+      exec "$@"
+    '')
+  ];
+
+  # specialisation for hybrid mode (optimus power saving on battery)
+  specialisation.hybrid.configuration = {
+    hardware.nvidia = {
+      powerManagement.finegrained = pkgs.lib.mkForce true;
+      prime = {
+        sync.enable = pkgs.lib.mkForce false;
+        offload = {
+          enable = true;
+          enableOffloadCmd = true;
+        };
+      };
     };
   };
 }

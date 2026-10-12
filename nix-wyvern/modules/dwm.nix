@@ -75,6 +75,9 @@
   services.udisks2.enable = true;
   hardware.bluetooth.enable = true;
 
+  # display management (autorandr + udev hotplug hook)
+  services.autorandr.enable = true;
+
   # Tools referenced by the dwm autostart / keybinds / dotfiles scripts.
   environment.systemPackages = with pkgs; [
     slock
@@ -97,6 +100,8 @@
     xrdb
     xrandr
     xset
+    autorandr
+    arandr
     # bar (autostart.sh) + dotfiles scripts
     xinput
     xsetroot

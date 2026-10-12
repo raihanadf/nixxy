@@ -29,12 +29,25 @@
   # `useRoutingFeatures = "client"` loosens reverse-path filtering so an exit
   # node would work if one is ever selected; openFirewall lets peers reach
   # UDP 41641 for direct connections instead of falling back to a DERP relay.
-  # Note: this does not open wyvern to the tailnet -- see
-  # networking.firewall.trustedInterfaces if inbound access is ever wanted.
+  # Note: sshd (:22) below is reachable from the tailnet because ts-input
+  # accepts tailscale0 traffic; other interfaces stay firewalled.
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "client";
     openFirewall = true;
+  };
+
+  # Inbound SSH. Reachable only from the tailnet: tailscaled's own ts-input
+  # chain accepts everything arriving on tailscale0 before nixos-fw runs,
+  # and nixos-fw drops :22 from every other interface, so sshd is never
+  # exposed to LAN/WAN. pubkey auth only.
+  services.openssh = {
+    enable = true;
+    settings = {
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+      PermitRootLogin = "no";
+    };
   };
 
   # Set your time zone.
