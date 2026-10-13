@@ -230,6 +230,8 @@ in {
     fzf
     fd
     bat
+    # minecraft launcher; bundles its own jdks
+    prismlauncher
   ];
 
   # Whole dotfiles tree at ~/.dotfiles — the dwm autostart and keybinds

@@ -4,17 +4,19 @@
 # quick settings, workspaces are stock):
 # - dock fixed at the bottom, one dot per running app, click to focus
 #   (dash-to-dock); tray icons in the top bar (appindicator)
-# - super+space opens overview search like spotlight (normally the input
-#   source switcher, so that binding is cleared)
-# - window buttons on the left, new windows centered, super+q closes, super+h
-#   hides (gnome default), shift+super+3/4/5 screenshots
+# - alt is the cmd key: alt+space opens overview search like spotlight,
+#   alt+q closes, alt+h/alt+m minimize, alt+shift+3/4/5 screenshots,
+#   alt+ctrl+f fullscreen, alt+ctrl+q locks, alt+tab / alt+` switch apps and
+#   windows (gnome default). alt+space normally opens the window menu, so
+#   that binding is cleared. copy/paste inside apps stays on ctrl.
+# - window buttons on the left, new windows centered
 # - trackpad: tap to click, two-finger right click, natural scrolling
 #
 # look is a pastel rice built around monet's "impression, sunrise": the
 # rose pine moon palette (lilac, foam, peach on deep indigo) recolors
 # libadwaita/gtk3 through gtk.css and the shell through a small user theme
 # layered on gnome's own dark stylesheet. frosted panel/dock (blur-my-shell),
-# rounded corners on non-libadwaita windows, colloid icons, rose pine cursor.
+# rounded corners on non-libadwaita windows, colloid icons, capitaine cursor.
 #
 # no sleep on AC: wyvern serves honcho around the clock.
 {
@@ -227,7 +229,7 @@ in {
     gnomeExtensions.user-themes
     gnomeExtensions.rounded-window-corners-reborn
     icons
-    rose-pine-cursor
+    capitaine-cursors
     nerd-fonts.jetbrains-mono
   ];
 
@@ -252,7 +254,7 @@ in {
       color-scheme = "prefer-dark";
       accent-color = "purple";
       icon-theme = "Colloid-Purple-Catppuccin-Dark";
-      cursor-theme = "BreezeX-RosePine-Linux";
+      cursor-theme = "capitaine-cursors";
       cursor-size = 24;
       monospace-font-name = "JetBrainsMono Nerd Font 11";
       clock-show-weekday = true;
@@ -301,14 +303,16 @@ in {
     };
     "org/gnome/desktop/wm/preferences".button-layout = "close,minimize,maximize:";
     "org/gnome/desktop/wm/keybindings" = {
-      close = ["<Super>q" "<Alt>F4"];
-      switch-input-source = lib.hm.gvariant.mkEmptyArray lib.hm.gvariant.type.string;
-      switch-input-source-backward = lib.hm.gvariant.mkEmptyArray lib.hm.gvariant.type.string;
+      close = ["<Alt>q" "<Alt>F4"];
+      minimize = ["<Alt>h" "<Alt>m"];
+      toggle-fullscreen = ["<Control><Alt>f"];
+      activate-window-menu = lib.hm.gvariant.mkEmptyArray lib.hm.gvariant.type.string;
     };
+    "org/gnome/settings-daemon/plugins/media-keys".screensaver = ["<Control><Alt>q" "<Super>l"];
     "org/gnome/shell/keybindings" = {
-      toggle-overview = ["<Super>space"];
-      screenshot = ["<Shift>Print" "<Shift><Super>3"];
-      show-screenshot-ui = ["Print" "<Shift><Super>4" "<Shift><Super>5"];
+      toggle-overview = ["<Alt>space"];
+      screenshot = ["<Shift>Print" "<Shift><Alt>3"];
+      show-screenshot-ui = ["Print" "<Shift><Alt>4" "<Shift><Alt>5"];
       screenshot-window = ["<Alt>Print"];
     };
   };
