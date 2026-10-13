@@ -18,7 +18,10 @@
 # accent recolor libadwaita/gtk3 through gtk.css and the shell through a
 # small user theme layered on gnome's own dark stylesheet. frosted
 # panel/dock (blur-my-shell), rounded corners on non-libadwaita windows,
-# whitesur icons, capitaine cursor, monet's "impression, sunrise" behind it.
+# whitesur icons (top bar status icons stay gnome's own adwaita symbolic:
+# whitesur's are thin, coloured and incomplete there), capitaine cursor,
+# monet's "impression, sunrise" behind it. qt apps run through xwayland so
+# mutter frames them with the same traffic lights, and borrow gtk3 colors.
 #
 # no sleep on AC: wyvern serves honcho around the clock.
 {
@@ -31,6 +34,17 @@
     url = "https://w.wallhaven.cc/full/83/wallhaven-83vw51.jpg";
     hash = "sha256-ktwDcAtwtpLif5KAWgg/Y187PAf/YtGcUEWr8VO+EY0=";
   };
+
+  # whitesur-dark without its status icons, falling back to adwaita for those
+  icons = pkgs.runCommand "whitesur-wyvern-icons" {nativeBuildInputs = [pkgs.gtk3];} ''
+    mkdir -p $out/share/icons
+    cp -rL ${pkgs.whitesur-icon-theme}/share/icons/WhiteSur-dark $out/share/icons/WhiteSur-Wyvern
+    chmod -R u+w $out/share/icons/WhiteSur-Wyvern
+    cd $out/share/icons/WhiteSur-Wyvern
+    rm -rf status status@2x icon-theme.cache
+    sed -i -e 's/^Name=.*/Name=WhiteSur-Wyvern/' -e 's/^Inherits=.*/Inherits=Adwaita,hicolor/' index.theme
+    gtk-update-icon-cache -f -t .
+  '';
 
   # macos dark mode
   bg = "#1e1e1e";
@@ -278,7 +292,7 @@ in {
     gnomeExtensions.user-themes
     gnomeExtensions.rounded-window-corners-reborn
     gnomeExtensions.vicinae
-    whitesur-icon-theme
+    icons
     nerd-fonts.jetbrains-mono
   ];
 
@@ -314,6 +328,10 @@ in {
   systemd.user.sessionVariables = {
     XCURSOR_THEME = "capitaine-cursors";
     XCURSOR_SIZE = "32";
+    # qt's own wayland decorations ignore gtk.css; under xwayland mutter
+    # draws the frame with gtk4, so traffic lights apply to qt apps too
+    QT_QPA_PLATFORM = "xcb";
+    QT_QPA_PLATFORMTHEME = "gtk3";
   };
 
   xdg.dataFile."themes/Wyvern".source = "${shellTheme}/share/themes/Wyvern";
@@ -336,7 +354,7 @@ in {
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
       accent-color = "blue";
-      icon-theme = "WhiteSur-dark";
+      icon-theme = "WhiteSur-Wyvern";
       cursor-theme = "capitaine-cursors";
       cursor-size = 32;
       # between 1x and the panel's smallest fractional step (1.25x): native
