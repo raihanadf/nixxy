@@ -16,8 +16,10 @@
 #
 # look is neutral like macos dark mode: graphite greys with the system blue
 # accent recolor libadwaita/gtk3 through gtk.css and the shell through a
-# small user theme layered on gnome's own dark stylesheet. frosted
-# panel/dock (blur-my-shell), rounded corners on non-libadwaita windows,
+# small user theme layered on gnome's own dark stylesheet. frosted top bar
+# (blur-my-shell); the dock keeps gnome's own dash styling so it looks like
+# the overview dash. rounded corners on non-libadwaita windows, caffeine in
+# the top bar to keep the laptop awake on demand,
 # whitesur icons (top bar status icons stay gnome's own adwaita symbolic:
 # whitesur's are thin, coloured and incomplete there), capitaine cursor,
 # monet's "impression, sunrise" behind it. qt apps run through xwayland so
@@ -272,16 +274,6 @@
       border: 1px solid ${whiteA "0.12"};
     }
     .search-entry:focus { border-color: ${accent}; }
-
-    /* dock: solid-ish glass. blur-my-shell's dock blur trails the dock
-       during overview transitions, so the dock is unblurred */
-    #dashtodockContainer .dash-background {
-      background-color: ${surfaceA "0.8"};
-      border: 1px solid ${whiteA "0.12"};
-      border-radius: 22px;
-    }
-    #dashtodockContainer .app-well-app-running-dot,
-    #dashtodockContainer .app-grid-running-dot { background-color: ${text}; }
   '';
 
   shellTheme = pkgs.writeTextDir "share/themes/Wyvern/gnome-shell/gnome-shell.css" shellCss;
@@ -293,6 +285,7 @@ in {
     gnomeExtensions.user-themes
     gnomeExtensions.rounded-window-corners-reborn
     gnomeExtensions.vicinae
+    gnomeExtensions.caffeine
     icons
     nerd-fonts.jetbrains-mono
     # kitty's font (dotfiles kitty.conf: CaskaydiaCove NF)
@@ -394,6 +387,7 @@ in {
         user-themes.extensionUuid
         rounded-window-corners-reborn.extensionUuid
         vicinae.extensionUuid
+        caffeine.extensionUuid
       ];
     };
     "org/gnome/shell/extensions/user-theme".name = "Wyvern";
@@ -401,7 +395,11 @@ in {
     # surface in compact mode; a corner/shadow around that would show as a
     # ghost frame under the search bar
     "org/gnome/shell/extensions/rounded-window-corners-reborn".blacklist = ["vicinae"];
+    # blur-my-shell's dock blur trails the dock during overview transitions
     "org/gnome/shell/extensions/blur-my-shell/dash-to-dock".blur = false;
+    # caffeine: quick settings toggle, top bar cup while active, survives
+    # logout/reboot once switched on
+    "org/gnome/shell/extensions/caffeine".restore-state = true;
     "org/gnome/shell/extensions/dash-to-dock" = {
       dock-position = "BOTTOM";
       dock-fixed = true;
