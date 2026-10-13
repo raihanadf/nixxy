@@ -229,9 +229,23 @@ in {
     gnomeExtensions.user-themes
     gnomeExtensions.rounded-window-corners-reborn
     icons
-    capitaine-cursors
     nerd-fonts.jetbrains-mono
   ];
+
+  # cursor everywhere: gnome (dconf below), plus XCURSOR_* and ~/.icons/default
+  # so xwayland apps (kitty, steam, minecraft) get the same theme and size.
+  # x11.enable would append to ~/.Xresources, which the dotfiles own.
+  home.pointerCursor = {
+    name = "capitaine-cursors";
+    package = pkgs.capitaine-cursors;
+    size = 32;
+  };
+  # pointerCursor only exports XCURSOR_* to shells; the gnome session (and
+  # every app launched from the dock) reads environment.d instead
+  systemd.user.sessionVariables = {
+    XCURSOR_THEME = "capitaine-cursors";
+    XCURSOR_SIZE = "32";
+  };
 
   xdg.dataFile."themes/Monet".source = "${shellTheme}/share/themes/Monet";
   xdg.configFile."gtk-4.0/gtk.css".text = gtk4Css;
@@ -255,7 +269,7 @@ in {
       accent-color = "purple";
       icon-theme = "Colloid-Purple-Catppuccin-Dark";
       cursor-theme = "capitaine-cursors";
-      cursor-size = 24;
+      cursor-size = 32;
       monospace-font-name = "JetBrainsMono Nerd Font 11";
       clock-show-weekday = true;
       show-battery-percentage = true;
@@ -272,7 +286,12 @@ in {
       tap-to-click = true;
       click-method = "fingers";
     };
-    "org/gnome/mutter".center-new-windows = true;
+    # 1.5x scale comes from monitors.xml (home-seed); render fractional scales
+    # natively and let xwayland apps scale themselves instead of blurring
+    "org/gnome/mutter" = {
+      center-new-windows = true;
+      experimental-features = ["scale-monitor-framebuffer" "xwayland-native-scaling"];
+    };
     "org/gnome/settings-daemon/plugins/power".sleep-inactive-ac-type = "nothing";
     "org/gnome/shell" = {
       favorite-apps = ["kitty.desktop" "org.gnome.Nautilus.desktop" "firefox.desktop"];

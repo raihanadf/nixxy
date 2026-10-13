@@ -3,6 +3,7 @@
 {
   config,
   pkgs,
+  lib,
   ...
 }: {
   imports = [
@@ -64,6 +65,19 @@
   services.displayManager.gdm.enable = true;
   services.displayManager.gdm.autoSuspend = false;
   services.desktopManager.gnome.enable = true;
+  # login screen matches the session: 1.5x scale (same monitors.xml as the
+  # user's) and the 32px capitaine cursor. gdm's home is /run/gdm.
+  programs.dconf.profiles.gdm.databases = [
+    {
+      settings = {
+        "org/gnome/desktop/interface" = {
+          cursor-theme = "capitaine-cursors";
+          cursor-size = lib.gvariant.mkInt32 32;
+        };
+        "org/gnome/mutter".experimental-features = ["scale-monitor-framebuffer" "xwayland-native-scaling"];
+      };
+    }
+  ];
   # bundled apps that firefox, kitty and teams already cover, or that go unused
   environment.gnome.excludePackages = with pkgs; [
     gnome-tour
@@ -150,7 +164,11 @@
   nix.settings.auto-optimise-store = true;
 
   # /etc/nixos points at the flake checkout, so plain `nixos-rebuild` finds it.
-  systemd.tmpfiles.rules = ["L+ /etc/nixos - - - - /home/raihan/.nixxy/nix-wyvern"];
+  systemd.tmpfiles.rules = [
+    "L+ /etc/nixos - - - - /home/raihan/.nixxy/nix-wyvern"
+    "d /run/gdm/.config 0711 gdm gdm -"
+    "L+ /run/gdm/.config/monitors.xml - - - - ${./home-seed/.config/monitors.xml}"
+  ];
 
   # Minimal system-wide packages. Prefer home.nix for user-facing tools.
   environment.systemPackages = with pkgs; [
@@ -160,6 +178,8 @@
     gnupg
     openssl
     jq
+    # cursor theme for gdm's login screen (see the gdm dconf profile above)
+    capitaine-cursors
   ];
 
   system.stateVersion = "26.05";
