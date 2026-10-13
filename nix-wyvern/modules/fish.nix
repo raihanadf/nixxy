@@ -81,7 +81,6 @@
       # `restore [dumpfile]` loads a pg_dump from ~/.honcho/backups (or the
       # given file) into an empty database.
       honcho = ''
-        function honcho
             set -l cmd $argv[1]
             set -l project_dir $HOME/.honcho/profiles/local
             set -l units honcho-mcp.service honcho-mcp-tailnet.service honcho-tailnet.service
@@ -142,7 +141,6 @@
                     echo "usage: honcho {start,stop,restart,restore [dumpfile]}" >&2
                     return 1
             end
-        end
       '';
     };
 

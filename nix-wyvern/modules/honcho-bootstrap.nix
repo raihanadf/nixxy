@@ -244,9 +244,11 @@ in {
       }
 
       # --- honcho-cli -----------------------------------------------------------
+      # pinned to the version the profile was made with. --force replaces a
+      # dangling ~/.local/bin/honcho shim left over from a restored home.
       if [ ! -x "$CLI" ]; then
         log "installing honcho-cli"
-        uv tool install honcho-cli
+        uv tool install --force honcho-cli==0.1.4
       fi
 
       # --- profile ---------------------------------------------------------------
