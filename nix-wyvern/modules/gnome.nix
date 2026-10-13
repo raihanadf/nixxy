@@ -22,8 +22,9 @@
 # the top bar to keep the laptop awake on demand,
 # whitesur icons (top bar status icons stay gnome's own adwaita symbolic:
 # whitesur's are thin, coloured and incomplete there), capitaine cursor,
-# monet's "impression, sunrise" behind it. qt apps run through xwayland so
-# mutter frames them with the same traffic lights, and borrow gtk3 colors.
+# gérôme's "l'éminence grise" (feud.jpg from loong) behind it. qt apps run
+# through xwayland so mutter frames them with the same traffic lights, and
+# borrow gtk3 colors.
 #
 # no sleep on AC: wyvern serves honcho around the clock.
 {
@@ -31,11 +32,8 @@
   lib,
   ...
 }: let
-  wallpaper = pkgs.fetchurl {
-    name = "monet-impression-sunrise.jpg";
-    url = "https://w.wallhaven.cc/full/83/wallhaven-83vw51.jpg";
-    hash = "sha256-ktwDcAtwtpLif5KAWgg/Y187PAf/YtGcUEWr8VO+EY0=";
-  };
+  # downscaled to 3000px from the 4998px original kept on loong
+  wallpaper = ../wallpapers/feud.jpg;
 
   # whitesur-dark without its status icons, falling back to adwaita for those
   icons = pkgs.runCommand "whitesur-wyvern-icons" {nativeBuildInputs = [pkgs.gtk3];} ''
