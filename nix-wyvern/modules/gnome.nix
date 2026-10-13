@@ -4,11 +4,13 @@
 # quick settings, workspaces are stock):
 # - dock fixed at the bottom, one dot per running app, click to focus
 #   (dash-to-dock); tray icons in the top bar (appindicator)
-# - alt is the cmd key: alt+space opens overview search like spotlight,
-#   alt+q closes, alt+h/alt+m minimize, alt+shift+3/4/5 screenshots,
-#   alt+ctrl+f fullscreen, alt+ctrl+q locks, alt+tab / alt+` switch apps and
-#   windows (gnome default). alt+space normally opens the window menu, so
-#   that binding is cleared. copy/paste inside apps stays on ctrl.
+# - alt is the cmd key: alt+space opens vicinae, a spotlight-style launcher
+#   centered on screen (its companion gnome extension gives it clipboard and
+#   window access), alt+q closes, alt+h/alt+m minimize, alt+shift+3/4/5
+#   screenshots, alt+ctrl+f fullscreen, alt+ctrl+q locks, alt+tab / alt+`
+#   switch apps and windows (gnome default). alt+space normally opens the
+#   window menu, so that binding is cleared. copy/paste inside apps stays on
+#   ctrl. the overview stays on super.
 # - window buttons on the left, new windows centered
 # - trackpad: tap to click, two-finger right click, natural scrolling
 #
@@ -281,9 +283,24 @@ in {
     gnomeExtensions.blur-my-shell
     gnomeExtensions.user-themes
     gnomeExtensions.rounded-window-corners-reborn
+    gnomeExtensions.vicinae
     icons
     nerd-fonts.jetbrains-mono
   ];
+
+  # spotlight: gnome has no layer shell, so vicinae runs as a normal centered
+  # window; daemon starts with the session so alt+space is instant
+  programs.vicinae = {
+    enable = true;
+    systemd.enable = true;
+    settings = {
+      launcher_window.layer_shell.enabled = false;
+      theme = {
+        dark.name = "rose-pine-moon";
+        light.name = "rose-pine-moon";
+      };
+    };
+  };
 
   # cursor everywhere: gnome (dconf below), plus XCURSOR_* and ~/.icons/default
   # so xwayland apps (kitty, steam, minecraft) get the same theme and size.
@@ -353,6 +370,7 @@ in {
         blur-my-shell.extensionUuid
         user-themes.extensionUuid
         rounded-window-corners-reborn.extensionUuid
+        vicinae.extensionUuid
       ];
     };
     "org/gnome/shell/extensions/user-theme".name = "Monet";
@@ -378,9 +396,16 @@ in {
       toggle-fullscreen = ["<Control><Alt>f"];
       activate-window-menu = lib.hm.gvariant.mkEmptyArray lib.hm.gvariant.type.string;
     };
-    "org/gnome/settings-daemon/plugins/media-keys".screensaver = ["<Control><Alt>q" "<Super>l"];
+    "org/gnome/settings-daemon/plugins/media-keys" = {
+      screensaver = ["<Control><Alt>q" "<Super>l"];
+      custom-keybindings = ["/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/vicinae/"];
+    };
+    "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/vicinae" = {
+      name = "Vicinae";
+      command = "vicinae toggle";
+      binding = "<Alt>space";
+    };
     "org/gnome/shell/keybindings" = {
-      toggle-overview = ["<Alt>space"];
       screenshot = ["<Shift>Print" "<Shift><Alt>3"];
       show-screenshot-ui = ["Print" "<Shift><Alt>4" "<Shift><Alt>5"];
       screenshot-window = ["<Alt>Print"];
