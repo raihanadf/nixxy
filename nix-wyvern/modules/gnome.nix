@@ -11,14 +11,14 @@
 #   switch apps and windows (gnome default). alt+space normally opens the
 #   window menu, so that binding is cleared. copy/paste inside apps stays on
 #   ctrl. the overview stays on super.
-# - window buttons on the left, new windows centered
+# - window buttons on the left as macos traffic lights, new windows centered
 # - trackpad: tap to click, two-finger right click, natural scrolling
 #
-# look is a pastel rice built around monet's "impression, sunrise": the
-# rose pine moon palette (lilac, foam, peach on deep indigo) recolors
-# libadwaita/gtk3 through gtk.css and the shell through a small user theme
-# layered on gnome's own dark stylesheet. frosted panel/dock (blur-my-shell),
-# rounded corners on non-libadwaita windows, colloid icons, capitaine cursor.
+# look is neutral like macos dark mode: graphite greys with the system blue
+# accent recolor libadwaita/gtk3 through gtk.css and the shell through a
+# small user theme layered on gnome's own dark stylesheet. frosted
+# panel/dock (blur-my-shell), rounded corners on non-libadwaita windows,
+# whitesur icons, capitaine cursor, monet's "impression, sunrise" behind it.
 #
 # no sleep on AC: wyvern serves honcho around the clock.
 {
@@ -32,97 +32,91 @@
     hash = "sha256-ktwDcAtwtpLif5KAWgg/Y187PAf/YtGcUEWr8VO+EY0=";
   };
 
-  icons = pkgs.colloid-icon-theme.override {
-    schemeVariants = ["catppuccin"];
-    colorVariants = ["purple"];
-  };
-
-  # rose pine moon
-  base = "#232136";
-  surface = "#2a273f";
-  overlay = "#393552";
-  muted = "#6e6a86";
-  text = "#e0def4";
-  love = "#eb6f92";
-  gold = "#f6c177";
-  rose = "#ea9a97";
-  pine = "#3e8fb0";
-  foam = "#9ccfd8";
-  iris = "#c4a7e7";
-  # traffic lights: rose pine's love and gold, plus a pastel green it lacks
-  trafficClose = love;
-  trafficMinimize = gold;
-  trafficMaximize = "#a6da95";
+  # macos dark mode
+  bg = "#1e1e1e";
+  surface = "#2a2a2a";
+  raised = "#3a3a3a";
+  muted = "#98989d";
+  text = "#ececec";
+  accent = "#0a84ff";
+  red = "#ff453a";
+  yellow = "#ffd60a";
+  green = "#32d74b";
+  # traffic lights, the window-control shades rather than the system ones
+  trafficClose = "#ff5f57";
+  trafficMinimize = "#febc2e";
+  trafficMaximize = "#28c840";
   # st (the shell's css engine) has no alpha(); translucent shell colors are
   # spelled out as rgba of the same palette entries
-  irisA = a: "rgba(196, 167, 231, ${a})";
-  surfaceA = a: "rgba(42, 39, 63, ${a})";
-  overlayA = a: "rgba(57, 53, 82, ${a})";
+  accentA = a: "rgba(10, 132, 255, ${a})";
+  surfaceA = a: "rgba(42, 42, 42, ${a})";
+  raisedA = a: "rgba(58, 58, 58, ${a})";
+  whiteA = a: "rgba(255, 255, 255, ${a})";
 
   gtk4Css = ''
-    @define-color accent_color ${iris};
-    @define-color accent_bg_color ${iris};
-    @define-color accent_fg_color ${base};
-    @define-color destructive_color ${love};
-    @define-color destructive_bg_color ${love};
-    @define-color destructive_fg_color ${base};
-    @define-color success_color ${foam};
-    @define-color success_bg_color ${pine};
-    @define-color warning_color ${gold};
-    @define-color warning_bg_color ${gold};
-    @define-color warning_fg_color ${base};
-    @define-color error_color ${love};
-    @define-color error_bg_color ${love};
-    @define-color error_fg_color ${base};
-    @define-color window_bg_color ${base};
+    @define-color accent_color ${accent};
+    @define-color accent_bg_color ${accent};
+    @define-color accent_fg_color #ffffff;
+    @define-color destructive_color ${red};
+    @define-color destructive_bg_color ${red};
+    @define-color destructive_fg_color #ffffff;
+    @define-color success_color ${green};
+    @define-color success_bg_color ${green};
+    @define-color warning_color ${yellow};
+    @define-color warning_bg_color ${yellow};
+    @define-color warning_fg_color ${bg};
+    @define-color error_color ${red};
+    @define-color error_bg_color ${red};
+    @define-color error_fg_color #ffffff;
+    @define-color window_bg_color ${bg};
     @define-color window_fg_color ${text};
-    @define-color view_bg_color ${surface};
+    @define-color view_bg_color ${bg};
     @define-color view_fg_color ${text};
     @define-color headerbar_bg_color ${surface};
     @define-color headerbar_fg_color ${text};
-    @define-color headerbar_backdrop_color ${base};
+    @define-color headerbar_backdrop_color ${bg};
     @define-color sidebar_bg_color ${surface};
     @define-color sidebar_fg_color ${text};
-    @define-color sidebar_backdrop_color ${base};
-    @define-color secondary_sidebar_bg_color ${base};
+    @define-color sidebar_backdrop_color ${bg};
+    @define-color secondary_sidebar_bg_color ${bg};
     @define-color secondary_sidebar_fg_color ${text};
-    @define-color card_bg_color alpha(${overlay}, 0.6);
+    @define-color card_bg_color alpha(${raised}, 0.6);
     @define-color card_fg_color ${text};
     @define-color dialog_bg_color ${surface};
     @define-color dialog_fg_color ${text};
     @define-color popover_bg_color ${surface};
     @define-color popover_fg_color ${text};
-    @define-color thumbnail_bg_color ${overlay};
+    @define-color thumbnail_bg_color ${raised};
     @define-color thumbnail_fg_color ${text};
 
     :root {
-      --accent-bg-color: ${iris};
-      --accent-fg-color: ${base};
-      --accent-color: ${iris};
-      --window-bg-color: ${base};
+      --accent-bg-color: ${accent};
+      --accent-fg-color: #ffffff;
+      --accent-color: ${accent};
+      --window-bg-color: ${bg};
       --window-fg-color: ${text};
-      --view-bg-color: ${surface};
+      --view-bg-color: ${bg};
       --view-fg-color: ${text};
       --headerbar-bg-color: ${surface};
       --headerbar-fg-color: ${text};
-      --headerbar-backdrop-color: ${base};
+      --headerbar-backdrop-color: ${bg};
       --sidebar-bg-color: ${surface};
       --sidebar-fg-color: ${text};
-      --sidebar-backdrop-color: ${base};
-      --card-bg-color: alpha(${overlay}, 0.6);
+      --sidebar-backdrop-color: ${bg};
+      --card-bg-color: alpha(${raised}, 0.6);
       --card-fg-color: ${text};
       --dialog-bg-color: ${surface};
       --dialog-fg-color: ${text};
       --popover-bg-color: ${surface};
       --popover-fg-color: ${text};
-      --destructive-bg-color: ${love};
-      --success-bg-color: ${pine};
-      --warning-bg-color: ${gold};
-      --error-bg-color: ${love};
+      --destructive-bg-color: ${red};
+      --success-bg-color: ${green};
+      --warning-bg-color: ${yellow};
+      --error-bg-color: ${red};
     }
 
-    /* traffic lights: pastel red/yellow/green dots, glyphs only on hover,
-       grey when the window is in the background */
+    /* traffic lights: red/yellow/green dots, glyphs only on hover, grey
+       when the window is in the background */
     windowcontrols { border-spacing: 8px; }
     windowcontrols > button {
       min-width: 14px;
@@ -139,33 +133,33 @@
       border-radius: 99px;
       -gtk-icon-size: 10px;
       color: transparent;
-      background-color: ${overlay};
+      background-color: ${raised};
       box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
     }
     windowcontrols > button.close > image { background-color: ${trafficClose}; }
     windowcontrols > button.minimize > image { background-color: ${trafficMinimize}; }
     windowcontrols > button.maximize > image { background-color: ${trafficMaximize}; }
-    windowcontrols > button:backdrop:not(:hover) > image { background-color: ${overlay}; }
-    windowcontrols:hover > button > image { color: rgba(35, 33, 54, 0.8); }
+    windowcontrols > button:backdrop:not(:hover) > image { background-color: ${raised}; }
+    windowcontrols:hover > button > image { color: rgba(0, 0, 0, 0.6); }
     windowcontrols > button:active > image { filter: brightness(0.85); }
   '';
 
   gtk3Css = ''
-    @define-color theme_bg_color ${base};
+    @define-color theme_bg_color ${bg};
     @define-color theme_fg_color ${text};
-    @define-color theme_base_color ${surface};
+    @define-color theme_base_color ${bg};
     @define-color theme_text_color ${text};
-    @define-color theme_selected_bg_color ${iris};
-    @define-color theme_selected_fg_color ${base};
-    @define-color insensitive_bg_color ${base};
+    @define-color theme_selected_bg_color ${accent};
+    @define-color theme_selected_fg_color #ffffff;
+    @define-color insensitive_bg_color ${bg};
     @define-color insensitive_fg_color ${muted};
-    @define-color borders ${overlay};
-    @define-color accent_color ${iris};
-    @define-color accent_bg_color ${iris};
-    @define-color accent_fg_color ${base};
-    @define-color window_bg_color ${base};
+    @define-color borders ${raised};
+    @define-color accent_color ${accent};
+    @define-color accent_bg_color ${accent};
+    @define-color accent_fg_color #ffffff;
+    @define-color window_bg_color ${bg};
     @define-color window_fg_color ${text};
-    @define-color view_bg_color ${surface};
+    @define-color view_bg_color ${bg};
     @define-color view_fg_color ${text};
     @define-color headerbar_bg_color ${surface};
     @define-color headerbar_fg_color ${text};
@@ -189,9 +183,9 @@
     button.titlebutton.close { background-color: ${trafficClose}; }
     button.titlebutton.minimize { background-color: ${trafficMinimize}; }
     button.titlebutton.maximize { background-color: ${trafficMaximize}; }
-    button.titlebutton:backdrop { background-color: ${overlay}; }
+    button.titlebutton:backdrop { background-color: ${raised}; }
     headerbar:hover button.titlebutton,
-    .titlebar:hover button.titlebutton { color: rgba(35, 33, 54, 0.8); }
+    .titlebar:hover button.titlebutton { color: rgba(0, 0, 0, 0.6); }
   '';
 
   shellCss = ''
@@ -207,11 +201,11 @@
     #panel .panel-button:hover,
     #panel .panel-button:active,
     #panel .panel-button:checked {
-      background-color: ${irisA "0.22"};
+      background-color: ${whiteA "0.14"};
       color: ${text};
     }
     #panel .clock { font-weight: 700; }
-    .workspace-dot { background-color: ${iris}; }
+    .workspace-dot { background-color: ${text}; }
 
     /* menus, quick settings, calendar, notifications */
     .popup-menu-content,
@@ -219,11 +213,11 @@
     .candidate-popup-content {
       background-color: ${surfaceA "0.96"};
       color: ${text};
-      border: 1px solid ${irisA "0.25"};
+      border: 1px solid ${whiteA "0.1"};
       border-radius: 20px;
     }
     .popup-menu-item:hover,
-    .popup-menu-item:focus { background-color: ${irisA "0.18"}; }
+    .popup-menu-item:focus { background-color: ${whiteA "0.1"}; }
     .quick-toggle,
     .quick-menu-toggle .quick-toggle,
     .quick-slider .slider-bin,
@@ -231,19 +225,19 @@
     .events-button,
     .world-clocks-button,
     .weather-button {
-      background-color: ${overlayA "0.7"};
+      background-color: ${raisedA "0.7"};
       color: ${text};
     }
     .quick-toggle:checked,
     .quick-menu-toggle .quick-toggle:checked,
     .quick-menu-toggle .quick-toggle-arrow:checked {
-      background-color: ${iris};
-      color: ${base};
+      background-color: ${accent};
+      color: #ffffff;
     }
-    .slider { color: ${iris}; -barlevel-active-background-color: ${iris}; }
+    .slider { color: ${accent}; -barlevel-active-background-color: ${accent}; }
     .calendar-today, .calendar-today:hover {
-      background-color: ${rose};
-      color: ${base};
+      background-color: ${accent};
+      color: #ffffff;
     }
     .notification-banner,
     .osd-window,
@@ -251,31 +245,31 @@
     .modal-dialog {
       background-color: ${surfaceA "0.96"};
       color: ${text};
-      border: 1px solid ${irisA "0.25"};
+      border: 1px solid ${whiteA "0.1"};
     }
     .switcher-list .item-box:selected,
-    .switcher-list .item-box:focus { background-color: ${irisA "0.25"}; }
+    .switcher-list .item-box:focus { background-color: ${accentA "0.35"}; }
 
-    /* overview search, the spotlight */
+    /* overview search */
     .search-entry {
-      background-color: ${overlayA "0.85"};
+      background-color: ${raisedA "0.85"};
       color: ${text};
       border-radius: 99px;
-      border: 1px solid ${irisA "0.35"};
+      border: 1px solid ${whiteA "0.12"};
     }
-    .search-entry:focus { border-color: ${iris}; }
+    .search-entry:focus { border-color: ${accent}; }
 
     /* dock */
     #dashtodockContainer .dash-background {
       background-color: ${surfaceA "0.55"};
-      border: 1px solid ${irisA "0.2"};
+      border: 1px solid ${whiteA "0.12"};
       border-radius: 22px;
     }
     #dashtodockContainer .app-well-app-running-dot,
-    #dashtodockContainer .app-grid-running-dot { background-color: ${foam}; }
+    #dashtodockContainer .app-grid-running-dot { background-color: ${text}; }
   '';
 
-  shellTheme = pkgs.writeTextDir "share/themes/Monet/gnome-shell/gnome-shell.css" shellCss;
+  shellTheme = pkgs.writeTextDir "share/themes/Wyvern/gnome-shell/gnome-shell.css" shellCss;
 in {
   home.packages = with pkgs; [
     gnomeExtensions.dash-to-dock
@@ -284,20 +278,25 @@ in {
     gnomeExtensions.user-themes
     gnomeExtensions.rounded-window-corners-reborn
     gnomeExtensions.vicinae
-    icons
+    whitesur-icon-theme
     nerd-fonts.jetbrains-mono
   ];
 
   # spotlight: gnome has no layer shell, so vicinae runs as a normal centered
-  # window; daemon starts with the session so alt+space is instant
+  # window; daemon starts with the session so alt+space is instant. compact
+  # mode shows just the search bar until you type, like macos spotlight.
   programs.vicinae = {
     enable = true;
     systemd.enable = true;
     settings = {
-      launcher_window.layer_shell.enabled = false;
+      launcher_window = {
+        layer_shell.enabled = false;
+        compact_mode.enabled = true;
+        rounding = 16;
+      };
       theme = {
-        dark.name = "rose-pine-moon";
-        light.name = "rose-pine-moon";
+        dark.name = "vicinae-dark";
+        light.name = "vicinae-dark";
       };
     };
   };
@@ -317,7 +316,7 @@ in {
     XCURSOR_SIZE = "32";
   };
 
-  xdg.dataFile."themes/Monet".source = "${shellTheme}/share/themes/Monet";
+  xdg.dataFile."themes/Wyvern".source = "${shellTheme}/share/themes/Wyvern";
   xdg.configFile."gtk-4.0/gtk.css".text = gtk4Css;
   xdg.configFile."gtk-3.0/gtk.css".text = gtk3Css;
 
@@ -336,8 +335,8 @@ in {
   dconf.settings = {
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
-      accent-color = "purple";
-      icon-theme = "Colloid-Purple-Catppuccin-Dark";
+      accent-color = "blue";
+      icon-theme = "WhiteSur-dark";
       cursor-theme = "capitaine-cursors";
       cursor-size = 32;
       # between 1x and the panel's smallest fractional step (1.25x): native
@@ -373,7 +372,11 @@ in {
         vicinae.extensionUuid
       ];
     };
-    "org/gnome/shell/extensions/user-theme".name = "Monet";
+    "org/gnome/shell/extensions/user-theme".name = "Wyvern";
+    # vicinae draws its own rounded window and keeps a transparent full-size
+    # surface in compact mode; a corner/shadow around that would show as a
+    # ghost frame under the search bar
+    "org/gnome/shell/extensions/rounded-window-corners-reborn".blacklist = ["vicinae"];
     "org/gnome/shell/extensions/dash-to-dock" = {
       dock-position = "BOTTOM";
       dock-fixed = true;
