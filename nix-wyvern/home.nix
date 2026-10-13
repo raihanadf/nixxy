@@ -2,7 +2,6 @@
 {
   config,
   pkgs,
-  lib,
   dotfiles,
   ...
 }: let
@@ -212,6 +211,7 @@ in {
     ./modules/fish.nix
     ./modules/node.nix
     ./modules/desktop-seed.nix
+    ./modules/gnome.nix
   ];
 
   home.username = "raihan";
@@ -230,9 +230,6 @@ in {
     fzf
     fd
     bat
-    gnomeExtensions.dash-to-dock
-    gnomeExtensions.appindicator
-    gnomeExtensions.blur-my-shell
   ];
 
   # Whole dotfiles tree at ~/.dotfiles — the dwm autostart and keybinds
@@ -263,90 +260,6 @@ in {
   # autorandr is x11-only and exits 1 under gnome wayland; dwm runs it from
   # display.sh instead, so the xdg autostart entry only produces a failed unit.
   xdg.configFile."autostart/autorandr.desktop".text = "[Desktop Entry]\nHidden=true\n";
-
-  # gnome 50 opens the overview at login and ignores both dash-to-dock's
-  # disable-overview-on-startup and just-perfection's startup-status; close
-  # it once the shell is up so login lands on the desktop like macos.
-  xdg.configFile."autostart/desktop-at-login.desktop".text = ''
-    [Desktop Entry]
-    Type=Application
-    Name=Desktop at login
-    Exec=sh -c "sleep 3; ${pkgs.glib}/bin/gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell --method org.freedesktop.DBus.Properties.Set org.gnome.Shell OverviewActive '<false>'"
-    OnlyShowIn=GNOME;
-    NoDisplay=true
-  '';
-
-  # gnome with a macos feel, still gnome underneath (top bar, overview,
-  # quick settings, workspaces stay stock):
-  # - dock: fixed at the bottom, compact, one dot per running app, click to
-  #   focus (dash-to-dock); translucent shell like macos vibrancy (blur-my-shell)
-  # - menu bar extras: tray icons in the top bar (appindicator), weekday in the
-  #   clock, battery percentage
-  # - spotlight: super+space opens overview search (normally the input source
-  #   switcher, so that binding is cleared)
-  # - windows: buttons on the left, new windows centered, super+q closes,
-  #   super+h hides (gnome default), shift+super+3/4/5 screenshots
-  # - trackpad: tap to click, two-finger right click, natural scrolling
-  # - no hot corner, blue accent, own wallpaper
-  # plus no sleep on AC: wyvern serves honcho around the clock.
-  dconf.settings = let
-    wallpaper = "file://${./home-seed/Pictures/Wallpapers/wallhaven-lyje9y.png}";
-  in {
-    "org/gnome/desktop/interface" = {
-      color-scheme = "prefer-dark";
-      accent-color = "blue";
-      clock-show-weekday = true;
-      show-battery-percentage = true;
-      enable-hot-corners = false;
-    };
-    "org/gnome/desktop/background" = {
-      picture-uri = wallpaper;
-      picture-uri-dark = wallpaper;
-      picture-options = "zoom";
-    };
-    "org/gnome/desktop/peripherals/touchpad" = {
-      natural-scroll = true;
-      tap-to-click = true;
-      click-method = "fingers";
-    };
-    "org/gnome/mutter".center-new-windows = true;
-    "org/gnome/settings-daemon/plugins/power".sleep-inactive-ac-type = "nothing";
-    "org/gnome/shell" = {
-      favorite-apps = ["kitty.desktop" "org.gnome.Nautilus.desktop" "firefox.desktop"];
-      disable-user-extensions = false;
-      enabled-extensions = with pkgs.gnomeExtensions; [
-        dash-to-dock.extensionUuid
-        appindicator.extensionUuid
-        blur-my-shell.extensionUuid
-      ];
-    };
-    "org/gnome/shell/extensions/dash-to-dock" = {
-      dock-position = "BOTTOM";
-      dock-fixed = true;
-      extend-height = false;
-      dash-max-icon-size = 48;
-      custom-theme-shrink = true;
-      show-trash = false;
-      show-mounts = false;
-      running-indicator-style = "DOT";
-      click-action = "focus-or-appspread";
-      transparency-mode = "DYNAMIC";
-      disable-overview-on-startup = true;
-      hot-keys = false;
-    };
-    "org/gnome/desktop/wm/preferences".button-layout = "close,minimize,maximize:";
-    "org/gnome/desktop/wm/keybindings" = {
-      close = ["<Super>q" "<Alt>F4"];
-      switch-input-source = lib.hm.gvariant.mkEmptyArray lib.hm.gvariant.type.string;
-      switch-input-source-backward = lib.hm.gvariant.mkEmptyArray lib.hm.gvariant.type.string;
-    };
-    "org/gnome/shell/keybindings" = {
-      toggle-overview = ["<Super>space"];
-      screenshot = ["<Shift>Print" "<Shift><Super>3"];
-      show-screenshot-ui = ["Print" "<Shift><Super>4" "<Shift><Super>5"];
-      screenshot-window = ["<Alt>Print"];
-    };
-  };
 
   programs.home-manager.enable = true;
 }
