@@ -1,0 +1,5 @@
+[Added Associations]
+x-scheme-handler/claude-cli=claude-code-url-handler.desktop;
+
+[Default Applications]
+x-scheme-handler/claude-cli=claude-code-url-handler.desktop

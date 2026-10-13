@@ -130,6 +130,9 @@
   # Enable flakes and the new nix command
   nix.settings.experimental-features = ["nix-command" "flakes"];
 
+  # /etc/nixos points at the flake checkout, so plain `nixos-rebuild` finds it.
+  systemd.tmpfiles.rules = ["L+ /etc/nixos - - - - /home/raihan/.nixxy/nix-wyvern"];
+
   # Minimal system-wide packages. Prefer home.nix for user-facing tools.
   environment.systemPackages = with pkgs; [
     vim

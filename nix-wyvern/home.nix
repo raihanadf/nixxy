@@ -211,6 +211,7 @@ in {
   imports = [
     ./modules/fish.nix
     ./modules/node.nix
+    ./modules/desktop-seed.nix
   ];
 
   home.username = "raihan";
