@@ -59,9 +59,25 @@
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
-  # Enable the KDE Plasma Desktop Environment.
-  services.displayManager.sddm.enable = true;
-  services.desktopManager.plasma6.enable = true;
+  # GNOME on GDM. wyvern stays on 24/7 for honcho, so the login screen must
+  # never suspend the machine on AC (gdm's default is 20 min idle).
+  services.displayManager.gdm.enable = true;
+  services.displayManager.gdm.autoSuspend = false;
+  services.desktopManager.gnome.enable = true;
+  # bundled apps that firefox, kitty and teams already cover, or that go unused
+  environment.gnome.excludePackages = with pkgs; [
+    gnome-tour
+    gnome-connections
+    epiphany
+    geary
+    gnome-music
+    gnome-contacts
+    gnome-maps
+    gnome-weather
+    totem
+    yelp
+    simple-scan
+  ];
 
   # Configure keymap in X11
   services.xserver.xkb = {
@@ -129,6 +145,9 @@
 
   # Enable flakes and the new nix command
   nix.settings.experimental-features = ["nix-command" "flakes"];
+  # hardlink identical files in the store; steam's 32/64-bit fhs envs and the
+  # hybrid specialisation share a lot
+  nix.settings.auto-optimise-store = true;
 
   # /etc/nixos points at the flake checkout, so plain `nixos-rebuild` finds it.
   systemd.tmpfiles.rules = ["L+ /etc/nixos - - - - /home/raihan/.nixxy/nix-wyvern"];

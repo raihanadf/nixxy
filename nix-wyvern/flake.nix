@@ -9,8 +9,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    oh-my-pi.url = "github:can1357/oh-my-pi";
-
     # Suckless tools (only slock is built from here) and the dwm fork.
     suckless = {
       url = "github:raihanadf/suckless";
@@ -31,7 +29,6 @@
     self,
     nixpkgs,
     home-manager,
-    oh-my-pi,
     suckless,
     dwm-niri,
     dotfiles,
@@ -42,7 +39,7 @@
     nixosConfigurations.wyvern = nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = {
-        inherit oh-my-pi suckless dwm-niri dotfiles;
+        inherit suckless dwm-niri dotfiles;
         # Flake source path, so modules can reach vendored files (honcho-bootstrap).
         repo = self.outPath;
       };
@@ -53,7 +50,7 @@
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "backup";
-          home-manager.extraSpecialArgs = {inherit oh-my-pi dotfiles;};
+          home-manager.extraSpecialArgs = {inherit dotfiles;};
           home-manager.users.raihan = import ./home.nix;
         }
       ];
