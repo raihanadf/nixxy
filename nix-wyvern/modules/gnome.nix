@@ -273,9 +273,10 @@
     }
     .search-entry:focus { border-color: ${accent}; }
 
-    /* dock */
+    /* dock: solid-ish glass. blur-my-shell's dock blur trails the dock
+       during overview transitions, so the dock is unblurred */
     #dashtodockContainer .dash-background {
-      background-color: ${surfaceA "0.55"};
+      background-color: ${surfaceA "0.8"};
       border: 1px solid ${whiteA "0.12"};
       border-radius: 22px;
     }
@@ -294,6 +295,8 @@ in {
     gnomeExtensions.vicinae
     icons
     nerd-fonts.jetbrains-mono
+    # kitty's font (dotfiles kitty.conf: CaskaydiaCove NF)
+    nerd-fonts.caskaydia-cove
   ];
 
   # spotlight: gnome has no layer shell, so vicinae runs as a normal centered
@@ -332,6 +335,9 @@ in {
     # draws the frame with gtk4, so traffic lights apply to qt apps too
     QT_QPA_PLATFORM = "xcb";
     QT_QPA_PLATFORMTHEME = "gtk3";
+    # same for kitty: its own wayland titlebar is a thin bar with right-side
+    # glyphs; under xwayland it gets the gnome frame and traffic lights
+    KITTY_DISABLE_WAYLAND = "1";
   };
 
   xdg.dataFile."themes/Wyvern".source = "${shellTheme}/share/themes/Wyvern";
@@ -395,6 +401,7 @@ in {
     # surface in compact mode; a corner/shadow around that would show as a
     # ghost frame under the search bar
     "org/gnome/shell/extensions/rounded-window-corners-reborn".blacklist = ["vicinae"];
+    "org/gnome/shell/extensions/blur-my-shell/dash-to-dock".blur = false;
     "org/gnome/shell/extensions/dash-to-dock" = {
       dock-position = "BOTTOM";
       dock-fixed = true;
