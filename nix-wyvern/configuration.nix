@@ -65,7 +65,7 @@
   services.displayManager.gdm.enable = true;
   services.displayManager.gdm.autoSuspend = false;
   services.desktopManager.gnome.enable = true;
-  # login screen matches the session: 1.5x scale (same monitors.xml as the
+  # login screen matches the session: 1.25x scale (same monitors.xml as the
   # user's) and the 32px capitaine cursor. gdm's home is /run/gdm.
   programs.dconf.profiles.gdm.databases = [
     {

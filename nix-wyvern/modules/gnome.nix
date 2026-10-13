@@ -286,7 +286,7 @@ in {
       tap-to-click = true;
       click-method = "fingers";
     };
-    # 1.5x scale comes from monitors.xml (home-seed); render fractional scales
+    # 1.25x scale comes from monitors.xml (home-seed); render fractional scales
     # natively and let xwayland apps scale themselves instead of blurring
     "org/gnome/mutter" = {
       center-new-windows = true;
