@@ -47,6 +47,10 @@
   pine = "#3e8fb0";
   foam = "#9ccfd8";
   iris = "#c4a7e7";
+  # traffic lights: rose pine's love and gold, plus a pastel green it lacks
+  trafficClose = love;
+  trafficMinimize = gold;
+  trafficMaximize = "#a6da95";
   # st (the shell's css engine) has no alpha(); translucent shell colors are
   # spelled out as rgba of the same palette entries
   irisA = a: "rgba(196, 167, 231, ${a})";
@@ -114,6 +118,34 @@
       --warning-bg-color: ${gold};
       --error-bg-color: ${love};
     }
+
+    /* traffic lights: pastel red/yellow/green dots, glyphs only on hover,
+       grey when the window is in the background */
+    windowcontrols { border-spacing: 8px; }
+    windowcontrols > button {
+      min-width: 14px;
+      min-height: 14px;
+      padding: 0;
+      margin: 0;
+      background: none;
+      box-shadow: none;
+    }
+    windowcontrols > button > image {
+      min-width: 14px;
+      min-height: 14px;
+      padding: 0;
+      border-radius: 99px;
+      -gtk-icon-size: 10px;
+      color: transparent;
+      background-color: ${overlay};
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+    }
+    windowcontrols > button.close > image { background-color: ${trafficClose}; }
+    windowcontrols > button.minimize > image { background-color: ${trafficMinimize}; }
+    windowcontrols > button.maximize > image { background-color: ${trafficMaximize}; }
+    windowcontrols > button:backdrop:not(:hover) > image { background-color: ${overlay}; }
+    windowcontrols:hover > button > image { color: rgba(35, 33, 54, 0.8); }
+    windowcontrols > button:active > image { filter: brightness(0.85); }
   '';
 
   gtk3Css = ''
@@ -137,6 +169,27 @@
     @define-color headerbar_fg_color ${text};
     @define-color popover_bg_color ${surface};
     @define-color popover_fg_color ${text};
+
+    /* traffic lights, same as gtk4 */
+    headerbar button.titlebutton,
+    .titlebar button.titlebutton {
+      min-width: 14px;
+      min-height: 14px;
+      padding: 0;
+      margin: 0 4px;
+      border: none;
+      border-radius: 99px;
+      background-image: none;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+      color: transparent;
+      -gtk-icon-shadow: none;
+    }
+    button.titlebutton.close { background-color: ${trafficClose}; }
+    button.titlebutton.minimize { background-color: ${trafficMinimize}; }
+    button.titlebutton.maximize { background-color: ${trafficMaximize}; }
+    button.titlebutton:backdrop { background-color: ${overlay}; }
+    headerbar:hover button.titlebutton,
+    .titlebar:hover button.titlebutton { color: rgba(35, 33, 54, 0.8); }
   '';
 
   shellCss = ''
