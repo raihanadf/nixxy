@@ -65,16 +65,14 @@
   services.displayManager.gdm.enable = true;
   services.displayManager.gdm.autoSuspend = false;
   services.desktopManager.gnome.enable = true;
-  # login screen matches the session: 1.25x scale (same monitors.xml as the
-  # user's) and the 32px capitaine cursor. gdm's home is /run/gdm.
+  # login screen matches the session: native 1x scale with 1.15x text and the
+  # 32px capitaine cursor
   programs.dconf.profiles.gdm.databases = [
     {
-      settings = {
-        "org/gnome/desktop/interface" = {
-          cursor-theme = "capitaine-cursors";
-          cursor-size = lib.gvariant.mkInt32 32;
-        };
-        "org/gnome/mutter".experimental-features = ["scale-monitor-framebuffer" "xwayland-native-scaling"];
+      settings."org/gnome/desktop/interface" = {
+        cursor-theme = "capitaine-cursors";
+        cursor-size = lib.gvariant.mkInt32 32;
+        text-scaling-factor = 1.15;
       };
     }
   ];
@@ -164,11 +162,7 @@
   nix.settings.auto-optimise-store = true;
 
   # /etc/nixos points at the flake checkout, so plain `nixos-rebuild` finds it.
-  systemd.tmpfiles.rules = [
-    "L+ /etc/nixos - - - - /home/raihan/.nixxy/nix-wyvern"
-    "d /run/gdm/.config 0711 gdm gdm -"
-    "L+ /run/gdm/.config/monitors.xml - - - - ${./home-seed/.config/monitors.xml}"
-  ];
+  systemd.tmpfiles.rules = ["L+ /etc/nixos - - - - /home/raihan/.nixxy/nix-wyvern"];
 
   # Minimal system-wide packages. Prefer home.nix for user-facing tools.
   environment.systemPackages = with pkgs; [

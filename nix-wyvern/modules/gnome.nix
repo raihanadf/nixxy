@@ -270,6 +270,9 @@ in {
       icon-theme = "Colloid-Purple-Catppuccin-Dark";
       cursor-theme = "capitaine-cursors";
       cursor-size = 32;
+      # between 1x and the panel's smallest fractional step (1.25x): native
+      # 1x display scale with text bumped up instead
+      text-scaling-factor = 1.15;
       monospace-font-name = "JetBrainsMono Nerd Font 11";
       clock-show-weekday = true;
       show-battery-percentage = true;
@@ -286,12 +289,7 @@ in {
       tap-to-click = true;
       click-method = "fingers";
     };
-    # 1.25x scale comes from monitors.xml (home-seed); render fractional scales
-    # natively and let xwayland apps scale themselves instead of blurring
-    "org/gnome/mutter" = {
-      center-new-windows = true;
-      experimental-features = ["scale-monitor-framebuffer" "xwayland-native-scaling"];
-    };
+    "org/gnome/mutter".center-new-windows = true;
     "org/gnome/settings-daemon/plugins/power".sleep-inactive-ac-type = "nothing";
     "org/gnome/shell" = {
       favorite-apps = ["kitty.desktop" "org.gnome.Nautilus.desktop" "firefox.desktop"];
