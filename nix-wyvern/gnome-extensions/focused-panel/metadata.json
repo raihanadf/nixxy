@@ -1,0 +1,6 @@
+{
+  "uuid": "focused-panel@wyvern",
+  "name": "Focused Panel",
+  "description": "Greys out the top bar on every monitor except the one holding the focused window.",
+  "shell-version": ["50"]
+}

@@ -1,9 +1,11 @@
-# NVIDIA RTX 2060 Mobile (TU106M, 10de:1f11, PCI 01:00.0) in PRIME offload mode.
+# NVIDIA RTX 2060 Mobile (TU106M, 10de:1f11, PCI 01:00.0) with the Intel UHD 630
+# (PCI 00:02.0), Optimus.
 #
-# The laptop is Optimus: the Intel UHD 630 (PCI 00:02.0) drives the display and
-# stays primary. The dGPU is used for offloaded graphics (`nvidia-offload cmd`)
-# and, more importantly here, for CUDA -- ollama talks to the driver directly
-# and does not need the offload wrapper.
+# default boot entry: PRIME sync. The dGPU renders everything and the Intel
+# GPU only scans out the laptop panel, so the dGPU-wired HDMI port works and
+# external monitors extend normally. `hybrid` boot entry: PRIME offload, the
+# Intel GPU renders and the dGPU wakes only for `nvidia-offload cmd` and CUDA
+# (ollama talks to the driver directly), for battery life; no external screens.
 #
 # Runtime D3/fine-grained power management is ON: driver 610.43.02+ upstreamed
 # the Turing GSP RTD3 fix (NVIDIA/open-gpu-kernel-modules#640, confirmed

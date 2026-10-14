@@ -275,6 +275,13 @@
   '';
 
   shellTheme = pkgs.writeTextDir "share/themes/Wyvern/gnome-shell/gnome-shell.css" shellCss;
+
+  # own extension (../gnome-extensions/focused-panel): greys out the top bar
+  # on every monitor except the focused one
+  focusedPanel = pkgs.runCommand "gnome-shell-extension-focused-panel" {} ''
+    mkdir -p $out/share/gnome-shell/extensions
+    cp -r ${../gnome-extensions/focused-panel} $out/share/gnome-shell/extensions/focused-panel@wyvern
+  '';
 in {
   home.packages = with pkgs; [
     gnomeExtensions.dash-to-dock
@@ -284,6 +291,9 @@ in {
     gnomeExtensions.rounded-window-corners-reborn
     gnomeExtensions.vicinae
     gnomeExtensions.caffeine
+    # a real top bar on every external monitor
+    gnomeExtensions.top-bar-all-monitors
+    focusedPanel
     icons
     nerd-fonts.jetbrains-mono
     # kitty's font (dotfiles kitty.conf: CaskaydiaCove NF)
@@ -386,6 +396,8 @@ in {
         rounded-window-corners-reborn.extensionUuid
         vicinae.extensionUuid
         caffeine.extensionUuid
+        top-bar-all-monitors.extensionUuid
+        "focused-panel@wyvern"
       ];
     };
     "org/gnome/shell/extensions/user-theme".name = "Wyvern";
