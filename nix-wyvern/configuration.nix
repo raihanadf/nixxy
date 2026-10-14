@@ -118,8 +118,10 @@
     shell = pkgs.fish;
   };
 
-  # Install firefox.
+  # Install firefox. userChrome.css (traffic-light window buttons, see
+  # modules/gnome.nix) only loads with this pref on.
   programs.firefox.enable = true;
+  programs.firefox.preferences."toolkit.legacyUserProfileCustomizations.stylesheets" = true;
 
   # Steam, game-ready. The module enables 32-bit graphics and the
   # steam-hardware controller udev rules; the NVIDIA driver libs (64+32-bit)

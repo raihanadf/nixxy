@@ -276,11 +276,42 @@
 
   shellTheme = pkgs.writeTextDir "share/themes/Wyvern/gnome-shell/gnome-shell.css" shellCss;
 
-  # own extension (../gnome-extensions/focused-panel): greys out the top bar
-  # on every monitor except the focused one
-  focusedPanel = pkgs.runCommand "gnome-shell-extension-focused-panel" {} ''
+  # firefox draws its own window buttons (tabs in the titlebar) and ignores
+  # gtk.css, so the traffic lights are repeated in its userChrome.css
+  firefoxChrome = ''
+    .titlebar-buttonbox { gap: 8px !important; margin-inline: 12px 4px !important; }
+    .titlebar-button {
+      appearance: none !important;
+      padding: 0 !important;
+      background: none !important;
+    }
+    .titlebar-button > .toolbarbutton-icon {
+      width: 14px !important;
+      height: 14px !important;
+      padding: 2px !important;
+      border-radius: 99px !important;
+      background-color: ${raised} !important;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18) !important;
+      -moz-context-properties: fill, fill-opacity !important;
+      fill: rgba(0, 0, 0, 0.6) !important;
+      fill-opacity: 0 !important;
+    }
+    .titlebar-close > .toolbarbutton-icon { background-color: ${trafficClose} !important; }
+    .titlebar-min > .toolbarbutton-icon { background-color: ${trafficMinimize} !important; }
+    .titlebar-max > .toolbarbutton-icon,
+    .titlebar-restore > .toolbarbutton-icon { background-color: ${trafficMaximize} !important; }
+    .titlebar-buttonbox:hover .toolbarbutton-icon { fill-opacity: 1 !important; }
+    :root:-moz-window-inactive .titlebar-buttonbox:not(:hover) .toolbarbutton-icon {
+      background-color: ${raised} !important;
+    }
+  '';
+
+  # own fork of topbar-all-monitors (../gnome-extensions/wyvern-panels): a top
+  # bar on every external monitor mirroring the main bar's indicators, greyed
+  # out wherever the focused window isn't
+  wyvernPanels = pkgs.runCommand "gnome-shell-extension-wyvern-panels" {} ''
     mkdir -p $out/share/gnome-shell/extensions
-    cp -r ${../gnome-extensions/focused-panel} $out/share/gnome-shell/extensions/focused-panel@wyvern
+    cp -r ${../gnome-extensions/wyvern-panels} $out/share/gnome-shell/extensions/wyvern-panels@wyvern
   '';
 in {
   home.packages = with pkgs; [
@@ -291,9 +322,7 @@ in {
     gnomeExtensions.rounded-window-corners-reborn
     gnomeExtensions.vicinae
     gnomeExtensions.caffeine
-    # a real top bar on every external monitor
-    gnomeExtensions.top-bar-all-monitors
-    focusedPanel
+    wyvernPanels
     icons
     nerd-fonts.jetbrains-mono
     # kitty's font (dotfiles kitty.conf: CaskaydiaCove NF)
@@ -345,6 +374,8 @@ in {
   xdg.dataFile."themes/Wyvern".source = "${shellTheme}/share/themes/Wyvern";
   xdg.configFile."gtk-4.0/gtk.css".text = gtk4Css;
   xdg.configFile."gtk-3.0/gtk.css".text = gtk3Css;
+  # the restored profile (profiles.ini: Path=rip2udot.default)
+  xdg.configFile."mozilla/firefox/rip2udot.default/chrome/userChrome.css".text = firefoxChrome;
 
   # gnome 50 opens the overview at login and ignores both dash-to-dock's
   # disable-overview-on-startup and just-perfection's startup-status; close
@@ -397,8 +428,7 @@ in {
         rounded-window-corners-reborn.extensionUuid
         vicinae.extensionUuid
         caffeine.extensionUuid
-        top-bar-all-monitors.extensionUuid
-        "focused-panel@wyvern"
+        "wyvern-panels@wyvern"
       ];
     };
     "org/gnome/shell/extensions/user-theme".name = "Wyvern";
