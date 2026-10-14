@@ -6,6 +6,9 @@
 //   under the mirror.
 // - every bar except the one on the monitor holding the focused window (or
 //   the pointer, when nothing is focused) is greyed out.
+// - dash-to-dock's dock follows that same monitor, by moving its
+//   preferred-monitor setting.
+import Gio from 'gi://Gio';
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
@@ -253,6 +256,8 @@ export default class WyvernPanelsExtension extends Extension {
 
         this._destroyPanels();
         this._dim(Main.panel, false);
+        this._dockSettings?.reset('preferred-monitor');
+        this._dockSettings = null;
     }
 
     _rebuildPanels() {
@@ -302,6 +307,29 @@ export default class WyvernPanelsExtension extends Extension {
         // with a single bar there is nothing to tell apart
         for (const [panel, monitor] of panels)
             this._dim(panel, panels.length > 1 && monitor !== focused);
+        this._moveDock(focused);
+    }
+
+    // dash-to-dock counts preferred-monitor from the primary monitor onwards
+    _moveDock(monitor) {
+        this._dockSettings ??= this._loadDockSettings();
+        if (!this._dockSettings)
+            return;
+        const count = Main.layoutManager.monitors.length;
+        const value = (monitor - Main.layoutManager.primaryIndex + count) % count;
+        if (this._dockSettings.get_int('preferred-monitor') !== value)
+            this._dockSettings.set_int('preferred-monitor', value);
+    }
+
+    _loadDockSettings() {
+        const dock = Main.extensionManager.lookup('dash-to-dock@micxgx.gmail.com');
+        if (!dock)
+            return null;
+        const source = Gio.SettingsSchemaSource.new_from_directory(
+            dock.dir.get_child('schemas').get_path(),
+            Gio.SettingsSchemaSource.get_default(), false);
+        const schema = source.lookup('org.gnome.shell.extensions.dash-to-dock', true);
+        return schema ? new Gio.Settings({settings_schema: schema}) : null;
     }
 
     _dim(panel, dimmed) {

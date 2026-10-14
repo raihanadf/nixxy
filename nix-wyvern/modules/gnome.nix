@@ -2,8 +2,10 @@
 #
 # layout has a macos feel but stays gnome underneath (top bar, overview,
 # quick settings, workspaces are stock):
-# - dock fixed at the bottom, one dot per running app, click to focus
-#   (dash-to-dock); tray icons in the top bar (appindicator)
+# - dock at the bottom that slides away when a window overlaps it and
+#   comes back on hover, shown only on the monitor with the focused window
+#   (dash-to-dock intellihide + wyvern-panels); tray icons in the top bar
+#   (appindicator)
 # - alt is the cmd key: alt+space opens vicinae, a spotlight-style launcher
 #   centered on screen (its companion gnome extension gives it clipboard and
 #   window access), alt+q closes, alt+h/alt+m minimize, alt+shift+3/4/5
@@ -438,12 +440,18 @@ in {
     "org/gnome/shell/extensions/rounded-window-corners-reborn".blacklist = ["vicinae"];
     # blur-my-shell's dock blur trails the dock during overview transitions
     "org/gnome/shell/extensions/blur-my-shell/dash-to-dock".blur = false;
+    # live blur instead of a blurred wallpaper snapshot: the snapshot is the
+    # primary monitor's, so it looks stretched behind the external bars
+    "org/gnome/shell/extensions/blur-my-shell/panel".static-blur = false;
     # caffeine: quick settings toggle, top bar cup while active, survives
     # logout/reboot once switched on
     "org/gnome/shell/extensions/caffeine".restore-state = true;
     "org/gnome/shell/extensions/dash-to-dock" = {
       dock-position = "BOTTOM";
-      dock-fixed = true;
+      dock-fixed = false;
+      autohide = true;
+      intellihide = true;
+      intellihide-mode = "ALL_WINDOWS";
       extend-height = false;
       dash-max-icon-size = 48;
       custom-theme-shrink = true;
