@@ -323,6 +323,7 @@ in {
   # so xwayland apps (kitty, steam, minecraft) get the same theme and size.
   # x11.enable would append to ~/.Xresources, which the dotfiles own.
   home.pointerCursor = {
+    enable = true;
     name = "capitaine-cursors";
     package = pkgs.capitaine-cursors;
     size = 32;
