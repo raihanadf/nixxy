@@ -16,11 +16,9 @@
     ./modules/honcho-mcp.nix
     ./modules/honcho-bootstrap.nix
     ./modules/firefox.nix
+    ./modules/boot.nix
+    ./modules/wifi.nix
   ];
-
-  # Use the systemd-boot EFI boot loader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
 
   networking.hostName = "wyvern";
 
