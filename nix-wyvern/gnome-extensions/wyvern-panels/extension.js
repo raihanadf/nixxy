@@ -55,16 +55,17 @@ const SecondaryPanel = GObject.registerClass({
 
         for (const container of Main.panel._rightBox.get_children()) {
             const indicator = container.get_first_child();
-            const mirror = new St.Widget({
-                layout_manager: new Clutter.BinLayout(),
+            // a clone paints its source scaled to its own allocation, so it
+            // must keep the source's natural size: centered, never filled
+            const mirror = new St.Bin({
                 reactive: true,
                 y_expand: true,
+                child: new Clutter.Clone({
+                    source: container,
+                    x_align: Clutter.ActorAlign.CENTER,
+                    y_align: Clutter.ActorAlign.CENTER,
+                }),
             });
-            mirror.add_child(new Clutter.Clone({
-                source: container,
-                y_align: Clutter.ActorAlign.CENTER,
-                y_expand: true,
-            }));
             container.bind_property('visible', mirror, 'visible',
                 GObject.BindingFlags.SYNC_CREATE);
             mirror.connect('button-release-event', () => {
