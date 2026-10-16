@@ -11,15 +11,15 @@
 # three that reacts to AC vs battery on its own, and it drives intel_pstate's
 # knobs (scaling_governor, EPP, no_turbo) directly instead of layering another
 # policy daemon on top. TLP is deliberately absent -- the two fight over the
-# same sysfs files. power-profiles-daemon likewise; gnome binds to it if it is
-# ever enabled, and then two things are writing the same governor.
+# same sysfs files. power-profiles-daemon likewise; plasma6 will bind to it if
+# it is ever enabled, and then two things are writing the same governor.
 {lib, ...}: {
-  # gnome enables power-profiles-daemon, and nixpkgs asserts that ppd and
+  # plasma6 enables power-profiles-daemon, and nixpkgs asserts that ppd and
   # auto-cpufreq are never on together -- they drive the same sysfs knobs and
-  # would fight. auto-cpufreq wins here, which is the deliberate trade: gnome's
-  # Power Saver / Balanced / Performance switcher goes inert, because that UI
-  # is a ppd frontend. The profiles below replace it, chosen by AC vs battery
-  # rather than by hand.
+  # would fight. auto-cpufreq wins here, which is the deliberate trade: the
+  # battery applet's Power Save / Balanced / Performance switcher in Plasma
+  # goes inert, because that UI is a ppd frontend. The profiles below replace
+  # it, chosen by AC vs battery rather than by hand.
   services.power-profiles-daemon.enable = lib.mkForce false;
 
   services.auto-cpufreq = {

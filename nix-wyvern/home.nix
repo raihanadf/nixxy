@@ -211,7 +211,6 @@ in {
     ./modules/fish.nix
     ./modules/node.nix
     ./modules/desktop-seed.nix
-    ./modules/gnome.nix
   ];
 
   home.username = "raihan";
@@ -232,6 +231,9 @@ in {
     bat
     # minecraft launcher; bundles its own jdks
     prismlauncher
+    # kitty's font (dotfiles kitty.conf: CaskaydiaCove NF)
+    nerd-fonts.caskaydia-cove
+    nerd-fonts.jetbrains-mono
   ];
 
   # Whole dotfiles tree at ~/.dotfiles — the dwm autostart and keybinds
@@ -259,7 +261,7 @@ in {
   xdg.configFile."networkmanager-dmenu".source = "${dotfiles}/config/networkmanager-dmenu";
   xdg.configFile."starship.toml".source = "${dotfiles}/config/starship.toml";
 
-  # autorandr is x11-only and exits 1 under gnome wayland; dwm runs it from
+  # autorandr is x11-only and exits 1 under plasma wayland; dwm runs it from
   # display.sh instead, so the xdg autostart entry only produces a failed unit.
   xdg.configFile."autostart/autorandr.desktop".text = "[Desktop Entry]\nHidden=true\n";
 

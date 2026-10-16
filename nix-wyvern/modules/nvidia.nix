@@ -79,6 +79,18 @@
     '')
   ];
 
+  # kwin renders on the first device in KWIN_DRM_DEVICES and only scans out on
+  # the rest (what dotfiles' kwin-gpu-switcher.sh toggled by hand). by-path
+  # names contain ':', which is also the list separator, so udev adds plain
+  # names. matched on the driver: the intel pci device also carries the boot
+  # simple-framebuffer card.
+  services.udev.extraRules = ''
+    KERNEL=="card*", SUBSYSTEM=="drm", DRIVERS=="nvidia", SYMLINK+="dri/nvidia-card"
+    KERNEL=="card*", SUBSYSTEM=="drm", DRIVERS=="i915", SYMLINK+="dri/intel-card"
+  '';
+  # default entry: the dgpu renders, it drives the hdmi port anyway
+  environment.sessionVariables.KWIN_DRM_DEVICES = "/dev/dri/nvidia-card:/dev/dri/intel-card";
+
   # specialisation for hybrid mode (optimus power saving on battery)
   specialisation.hybrid.configuration = {
     hardware.nvidia = {
@@ -91,5 +103,7 @@
         };
       };
     };
+    # hybrid: intel renders, the dgpu only scans out the external monitor
+    environment.sessionVariables.KWIN_DRM_DEVICES = pkgs.lib.mkForce "/dev/dri/intel-card:/dev/dri/nvidia-card";
   };
 }

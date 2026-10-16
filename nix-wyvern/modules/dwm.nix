@@ -51,7 +51,7 @@
     })
   ];
 
-  # dwm as a selectable session (alongside GNOME) in GDM. No `package`
+  # dwm as a selectable session (alongside Plasma) in SDDM. No `package`
   # here: it defaults to pkgs.dwm, which the overlay above already made the
   # dwm-niri fork.
   services.xserver.windowManager.dwm.enable = true;

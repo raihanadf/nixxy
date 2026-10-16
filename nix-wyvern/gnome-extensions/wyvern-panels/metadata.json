@@ -1,7 +1,0 @@
-{
-  "uuid": "wyvern-panels@wyvern",
-  "name": "Wyvern Panels",
-  "description": "A top bar on every external monitor that mirrors the main bar's indicators, greyed out on monitors without the focused window. Fork of fa8i/topbar-all-monitors.",
-  "shell-version": ["50"],
-  "url": "https://github.com/fa8i/topbar-all-monitors"
-}

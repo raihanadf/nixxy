@@ -59,36 +59,11 @@
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
-  # GNOME on GDM. wyvern stays on 24/7 for honcho, so the login screen must
-  # never suspend the machine on AC (gdm's default is 20 min idle).
-  services.displayManager.gdm.enable = true;
-  services.displayManager.gdm.autoSuspend = false;
-  services.desktopManager.gnome.enable = true;
-  # login screen matches the session: native 1x scale with 1.15x text and the
-  # 32px capitaine cursor
-  programs.dconf.profiles.gdm.databases = [
-    {
-      settings."org/gnome/desktop/interface" = {
-        cursor-theme = "capitaine-cursors";
-        cursor-size = lib.gvariant.mkInt32 32;
-        text-scaling-factor = 1.15;
-      };
-    }
-  ];
-  # bundled apps that firefox, kitty and teams already cover, or that go unused
-  environment.gnome.excludePackages = with pkgs; [
-    gnome-tour
-    gnome-connections
-    epiphany
-    geary
-    gnome-music
-    gnome-contacts
-    gnome-maps
-    gnome-weather
-    totem
-    yelp
-    simple-scan
-  ];
+  # KDE Plasma 6 on SDDM. the plasma session is wayland; dwm stays as an x11
+  # session next to it. AC never suspends (seeded powerdevilrc): wyvern serves
+  # honcho 24/7.
+  services.displayManager.sddm.enable = true;
+  services.desktopManager.plasma6.enable = true;
 
   # Configure keymap in X11
   services.xserver.xkb = {
@@ -168,8 +143,13 @@
     gnupg
     openssl
     jq
-    # cursor theme for gdm's login screen (see the gdm dconf profile above)
-    capitaine-cursors
+    # login screen shows the desktop wallpaper. sddm can't read $HOME, so the
+    # store copy; theme.conf.user lands next to breeze's theme.conf in the
+    # merged system profile.
+    (writeTextDir "share/sddm/themes/breeze/theme.conf.user" ''
+      [General]
+      background=${./home-seed/Pictures/Wallpapers/feud.jpg}
+    '')
   ];
 
   system.stateVersion = "26.05";

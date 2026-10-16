@@ -2,7 +2,7 @@
 
 Raihan's Nix configs.
 
-- `nix-wyvern/` — NixOS laptop (`wyvern`): GNOME + dwm, Home Manager.
+- `nix-wyvern/` — NixOS laptop (`wyvern`): KDE Plasma + dwm, Home Manager.
 - `nix-darwin/` — macOS (`loong`): nix-darwin + Home Manager + Homebrew.
 
 ## Apply

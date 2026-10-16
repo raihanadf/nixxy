@@ -20,9 +20,6 @@
     enable = true;
     preferencesStatus = "default";
     preferences = {
-      # userChrome.css (traffic-light window buttons, see modules/gnome.nix)
-      "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
-
       # gpu video decoding
       "media.ffmpeg.vaapi.enabled" = true;
       "media.hardware-video-decoding.force-enabled" = true;
