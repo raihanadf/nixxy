@@ -131,6 +131,9 @@
   # hardlink identical files in the store; steam's 32/64-bit fhs envs and the
   # hybrid specialisation share a lot
   nix.settings.auto-optimise-store = true;
+  # numtide's cache serves the llm-agents packages prebuilt (see flake.nix)
+  nix.settings.extra-substituters = ["https://cache.numtide.com"];
+  nix.settings.extra-trusted-public-keys = ["niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="];
 
   # /etc/nixos points at the flake checkout, so plain `nixos-rebuild` finds it.
   systemd.tmpfiles.rules = ["L+ /etc/nixos - - - - /home/raihan/.nixxy/nix-wyvern"];

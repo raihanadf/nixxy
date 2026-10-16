@@ -3,6 +3,7 @@
   config,
   pkgs,
   dotfiles,
+  llm-agents,
   ...
 }: let
   displayScript = pkgs.writeShellScript "display.sh" ''
@@ -224,7 +225,10 @@ in {
     # aarch64-darwin only. This is the community Electron wrapper.
     teams-for-linux
     wget
-    claude-code
+    # agents from llm-agents.nix (flake input): prebuilt, no local compiles
+    llm-agents.claude-code
+    llm-agents.claude-desktop
+    llm-agents.omp
     grc
     fzf
     fd

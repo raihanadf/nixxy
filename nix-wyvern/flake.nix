@@ -23,6 +23,9 @@
       url = "git+https://github.com/raihanadf/dotfiles.git?submodules=1";
       flake = false;
     };
+    # prebuilt ai agents (claude code, claude desktop, omp) from numtide's
+    # cache. no nixpkgs follows: the cache only hits on their own pin.
+    llm-agents.url = "github:numtide/llm-agents.nix";
   };
 
   outputs = {
@@ -32,6 +35,7 @@
     suckless,
     dwm-niri,
     dotfiles,
+    llm-agents,
     ...
   }: let
     system = "x86_64-linux";
@@ -50,7 +54,10 @@
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "backup";
-          home-manager.extraSpecialArgs = {inherit dotfiles;};
+          home-manager.extraSpecialArgs = {
+            inherit dotfiles;
+            llm-agents = llm-agents.packages.${system};
+          };
           home-manager.users.raihan = import ./home.nix;
         }
       ];
