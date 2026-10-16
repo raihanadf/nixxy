@@ -1,14 +1,14 @@
-# GRUB with the Fallout pip-boy theme, NixOS and Windows in one menu.
+# GRUB with the Fallout pip-boy theme, NixOS and Windows in one menu, then a
+# breeze plymouth splash into sddm.
 #
-# systemd-boot has no theming at all, so this is GRUB (EFI, on the NixOS ESP
-# nvme0n1p5). Windows lives on its own ESP (nvme0n1p1, fat uuid D257-CB47)
-# and is chainloaded from there, listed last.
+# systemd-boot has no theming at all, so this is GRUB (EFI). This install
+# shares windows' 100M esp (nvme0n1p1, fat uuid D257-CB47), mounted at
+# /boot/efi: it only holds grub's loader, kernels live in /boot on the btrfs
+# root. Windows is chainloaded from the same esp, listed last.
 #
-# This firmware moves Windows Boot Manager back to the top of BootOrder and
-# keeps booting the old systemd-boot entry, so GRUB is also installed as the
-# removable fallback loader (EFI/BOOT/BOOTX64.EFI) and the systemd-boot files
-# are removed on every switch: whichever entry the firmware picks on p5 ends
-# up in GRUB.
+# This firmware moves Windows Boot Manager back to the top of BootOrder, so
+# GRUB is also installed as the removable fallback loader
+# (EFI/BOOT/BOOTX64.EFI) and put first in BootOrder on every switch.
 {
   pkgs,
   lib,
@@ -23,6 +23,7 @@
 in {
   boot.loader.systemd-boot.enable = false;
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.efi.efiSysMountPoint = "/boot/efi";
   boot.loader.grub = {
     enable = true;
     efiSupport = true;
@@ -40,9 +41,9 @@ in {
       }
     '';
     extraInstallCommands = ''
-      esp=/boot/EFI
-      ${pkgs.coreutils}/bin/install -D -m 0755 $esp/NixOS-boot/grubx64.efi $esp/BOOT/BOOTX64.EFI
-      ${pkgs.coreutils}/bin/rm -rf $esp/systemd $esp/Linux /boot/loader
+      esp=/boot/efi/EFI
+      ${pkgs.coreutils}/bin/install -D -m 0755 $esp/NixOS-boot-efi/grubx64.efi $esp/BOOT/BOOTX64.EFI
+      ${pkgs.coreutils}/bin/rm -rf $esp/systemd $esp/Linux /boot/efi/loader
       # GRUB first, Windows Boot Manager after it
       efi=${lib.getExe' pkgs.efibootmgr "efibootmgr"}
       grub=$($efi | ${pkgs.gnused}/bin/sed -n 's/^Boot\([0-9A-F]\{4\}\)\* NixOS-boot.*/\1/p' | ${pkgs.coreutils}/bin/head -1)
@@ -53,4 +54,19 @@ in {
       $efi -q -o "$grub''${rest:+,$rest}"
     '';
   };
+
+  # breeze splash from grub to the login screen. systemd in the initrd keeps
+  # it up through stage 1, i915 early so the laptop panel has kms right away
+  # (the panel hangs off the intel gpu even in prime sync), and the kernel and
+  # systemd stay quiet underneath it.
+  boot.plymouth = {
+    enable = true;
+    theme = "breeze";
+    themePackages = [pkgs.kdePackages.breeze-plymouth];
+  };
+  boot.initrd.systemd.enable = true;
+  boot.initrd.kernelModules = ["i915"];
+  boot.initrd.verbose = false;
+  boot.consoleLogLevel = 3;
+  boot.kernelParams = ["quiet" "splash" "udev.log_level=3" "systemd.show_status=auto"];
 }

@@ -8,31 +8,30 @@
     [ (modulesPath + "/installer/scan/not-detected.nix")
     ];
 
-  boot.initrd.availableKernelModules = [ "xhci_pci" "ahci" "nvme" "usb_storage" "sd_mod" "rtsx_usb_sdmmc" ];
+  boot.initrd.availableKernelModules = [ "xhci_pci" "ahci" "nvme" "usbhid" "usb_storage" "sd_mod" "rtsx_usb_sdmmc" ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
   fileSystems."/" =
-    { device = "/dev/disk/by-uuid/a4d127bd-9099-4b3b-8e53-1490e46c2777";
+    { device = "/dev/disk/by-uuid/0796d412-8b0d-4c24-bd23-f1895042728d";
       fsType = "btrfs";
-      options = [ "subvol=@" "compress=zstd" "noatime" ];
     };
 
   fileSystems."/home" =
-    { device = "/dev/disk/by-uuid/a4d127bd-9099-4b3b-8e53-1490e46c2777";
+    { device = "/dev/disk/by-uuid/0796d412-8b0d-4c24-bd23-f1895042728d";
       fsType = "btrfs";
-      options = [ "subvol=@home" "compress=zstd" "noatime" ];
+      options = [ "subvol=home" ];
     };
 
   fileSystems."/nix" =
-    { device = "/dev/disk/by-uuid/a4d127bd-9099-4b3b-8e53-1490e46c2777";
+    { device = "/dev/disk/by-uuid/0796d412-8b0d-4c24-bd23-f1895042728d";
       fsType = "btrfs";
-      options = [ "subvol=@nix" "compress=zstd" "noatime" ];
+      options = [ "subvol=nix" ];
     };
 
-  fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/C449-4242";
+  fileSystems."/boot/efi" =
+    { device = "/dev/disk/by-uuid/D257-CB47";
       fsType = "vfat";
       options = [ "fmask=0077" "dmask=0077" ];
     };
