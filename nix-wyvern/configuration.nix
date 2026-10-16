@@ -35,6 +35,9 @@
     enable = true;
     useRoutingFeatures = "client";
     openFirewall = true;
+    # every honcho client (omp, claude hooks, loong) dials wyvern-1, so the
+    # node name is pinned on each boot instead of whatever `tailscale up` got
+    extraSetFlags = ["--hostname=wyvern-1"];
   };
 
   # Inbound SSH. Reachable only from the tailnet: tailscaled's own ts-input
