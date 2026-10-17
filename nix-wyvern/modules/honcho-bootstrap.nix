@@ -413,26 +413,14 @@ in {
           },
       }
 
-      # omp mcp.json: create when missing, patch in the honcho server otherwise
-      if not os.path.exists(omp_mcp):
-          with open(omp_mcp, "w") as f:
-              json.dump({"mcpServers": {"honcho": entry}}, f, indent=2)
-      else:
-          data = json.load(open(omp_mcp))
-          if "honcho" not in data.get("mcpServers", {}):
-              data.setdefault("mcpServers", {})["honcho"] = entry
-              json.dump(data, open(omp_mcp, "w"), indent=2)
-
-      # claude.json: same, but a fresh machine has no file yet -- create it so
-      # Claude Code has the honcho MCP server from the very first run
-      if not os.path.exists(claude_json):
-          with open(claude_json, "w") as f:
-              json.dump({"mcpServers": {"honcho": entry}}, f, indent=2)
-      else:
-          data = json.load(open(claude_json))
-          if "honcho" not in data.get("mcpServers", {}):
-              data.setdefault("mcpServers", {})["honcho"] = entry
-              json.dump(data, open(claude_json, "w"), indent=2)
+      # omp mcp.json and claude.json: create when missing, otherwise (re)write
+      # the honcho server. always rewritten, not just added: a config restored
+      # from a backup carries a token signed with the old install's secret.
+      for path in (omp_mcp, claude_json):
+          data = json.load(open(path)) if os.path.exists(path) else {}
+          data.setdefault("mcpServers", {})["honcho"] = entry
+          with open(path, "w") as f:
+              json.dump(data, f, indent=2)
 
       # the minted token for honcho-cli's client config (~/.honcho/config.json)
       with open(jwt_out, "w") as f:
