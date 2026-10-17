@@ -18,6 +18,7 @@
     ./modules/firefox.nix
     ./modules/boot.nix
     ./modules/wifi.nix
+    ./modules/wallpaper-sync.nix
   ];
 
   networking.hostName = "wyvern";
@@ -149,13 +150,6 @@
     gnupg
     openssl
     jq
-    # login screen shows the desktop wallpaper. sddm can't read $HOME, so the
-    # store copy; theme.conf.user lands next to breeze's theme.conf in the
-    # merged system profile.
-    (writeTextDir "share/sddm/themes/breeze/theme.conf.user" ''
-      [General]
-      background=${./home-seed/Pictures/Wallpapers/feud.jpg}
-    '')
   ];
 
   system.stateVersion = "26.05";
