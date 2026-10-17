@@ -65,9 +65,16 @@
     script = ''
       addr="$(${pkgs.tailscale}/bin/tailscale ip -4)"
       test -n "$addr" || { echo "no tailscale address yet"; exit 1; }
-      exec ${pkgs.socat}/bin/socat \
+      ${pkgs.socat}/bin/socat \
         TCP-LISTEN:8787,bind="$addr",fork,reuseaddr \
-        TCP:127.0.0.1:8787
+        TCP:127.0.0.1:8787 &
+      # the bind is to one address: exit when the node gets a new one
+      # (re-login), systemd restarts it on the new address
+      while kill -0 $! 2>/dev/null; do
+        sleep 30
+        [ "$(${pkgs.tailscale}/bin/tailscale ip -4)" = "$addr" ] || { echo "tailscale address changed"; exit 1; }
+      done
+      exit 1
     '';
   };
 

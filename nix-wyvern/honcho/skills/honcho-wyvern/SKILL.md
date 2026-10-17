@@ -19,7 +19,7 @@ visible from the other.
   representation of.
 - **Assistant peer:** use `claude-code` or `omp` — whichever you are. Add
   yourself to sessions as a peer, but do not observe yourself.
-- **Endpoint:** `http://127.0.0.1:8000` on wyvern; `http://wyvern-1:8000` from
+- **Endpoint:** `http://127.0.0.1:8000` on wyvern; `http://wyvern:8000` from
   loong over tailscale. The CLI already has this in `~/.honcho/config.json`.
 
 ## Sessions

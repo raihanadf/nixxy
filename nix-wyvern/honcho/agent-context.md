@@ -1,6 +1,6 @@
 ## Honcho memory (self-hosted, MCP)
 
-Memory runs on wyvern: `http://wyvern-1:8787/` (`127.0.0.1:8787` on wyvern), the `honcho` MCP server in `~/.omp/agent/mcp.json` and `~/.claude.json`. Workspace comes from the `X-Honcho-Workspace-ID` header: never pass `workspace_id`, never list/create workspaces.
+Memory runs on wyvern: `http://wyvern:8787/` (`127.0.0.1:8787` on wyvern), the `honcho` MCP server in `~/.omp/agent/mcp.json` and `~/.claude.json`. Workspace comes from the `X-Honcho-Workspace-ID` header: never pass `workspace_id`, never list/create workspaces.
 
 Automatic in both tools, never do it by hand or announce it: recall injects the core memory once per session, then only new conclusions relevant to each prompt (omp `extensions/honcho.ts`, Claude Code `hooks/honcho-recall.sh`); retain queues each finished exchange in `~/.cache/honcho-retain/queue/` and sends it, so nothing is lost while wyvern is down (omp `agent_end`, Claude Code `hooks/honcho-retain.sh` on Stop; errors in `~/.cache/honcho-retain/error.log`). Same files on wyvern and loong: change one, copy to the other.
 
