@@ -1,61 +1,65 @@
-# GRUB with the Fallout pip-boy theme, NixOS and Windows in one menu, then a
+# Secure Boot through lanzaboote (signed systemd-boot + signed kernels), then a
 # breeze plymouth splash into sddm.
 #
-# systemd-boot has no theming at all, so this is GRUB (EFI). This install
-# shares windows' 100M esp (nvme0n1p1, fat uuid D257-CB47), mounted at
-# /boot/efi: it only holds grub's loader, kernels live in /boot on the btrfs
-# root. Windows is chainloaded from the same esp, listed last.
+# Stock NixOS GRUB can't do Secure Boot: the firmware rejects it unsigned, and
+# signed it locks down and refuses unsigned kernels and modules. So the fallout
+# GRUB is gone.
 #
-# This firmware moves Windows Boot Manager back to the top of BootOrder, so
-# GRUB is also installed as the removable fallback loader
-# (EFI/BOOT/BOOTX64.EFI) and put first in BootOrder on every switch.
+# NixOS has its own 1G esp (nvme0n1p4, fat uuid 33C9-2F18) mounted at /boot.
+# Windows' 100M esp (nvme0n1p1) is too small for one generation (13M kernel +
+# 56M initrd), so it's left to Windows. systemd-boot only lists Windows when
+# it's on the same esp, so Windows boots from the firmware boot menu.
+#
+# Keys live in /var/lib/sbctl (sbctl create-keys) and are enrolled next to
+# Microsoft's (sbctl enroll-keys -m) so Windows still boots.
+#
+# This firmware moves Windows Boot Manager back to the top of BootOrder and
+# lanzaboote doesn't create an nvram entry, so activation (every boot and
+# switch) creates "Linux Boot Manager" if it's missing and puts it first.
 {
   pkgs,
   lib,
   ...
-}: let
-  falloutTheme = pkgs.fetchFromGitHub {
-    owner = "shvchk";
-    repo = "fallout-grub-theme";
-    rev = "b441e25a6d115614dc00ee6d11355d019a4969bf";
-    sha256 = "1kxf2zv9azz1zz1hzjdzj5pgcyg5mdkl6f3vifr673ahvcrlpm3l";
-  };
-in {
-  boot.loader.systemd-boot.enable = false;
+}: {
+  environment.systemPackages = [pkgs.sbctl];
+
+  boot.loader.grub.enable = false;
+  # lanzaboote replaces the systemd-boot module
+  boot.loader.systemd-boot.enable = lib.mkForce false;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.efi.efiSysMountPoint = "/boot/efi";
-  boot.loader.grub = {
+  boot.loader.efi.efiSysMountPoint = "/boot";
+  boot.loader.timeout = 3;
+  # no kernel cmdline editing at the menu (init=/bin/sh would skip secure boot's point)
+  boot.loader.systemd-boot.editor = false;
+  boot.lanzaboote = {
     enable = true;
-    efiSupport = true;
-    efiInstallAsRemovable = false;
-    device = "nodev";
-    theme = falloutTheme;
-    # the theme's fonts and layout are drawn for 1080p
-    gfxmodeEfi = "1920x1080";
-    extraEntries = ''
-      menuentry "Windows" --class windows {
-        insmod part_gpt
-        insmod fat
-        search --no-floppy --fs-uuid --set=root D257-CB47
-        chainloader /EFI/Microsoft/Boot/bootmgfw.efi
-      }
-    '';
-    extraInstallCommands = ''
-      esp=/boot/efi/EFI
-      ${pkgs.coreutils}/bin/install -D -m 0755 $esp/NixOS-boot-efi/grubx64.efi $esp/BOOT/BOOTX64.EFI
-      ${pkgs.coreutils}/bin/rm -rf $esp/systemd $esp/Linux /boot/efi/loader
-      # GRUB first, Windows Boot Manager after it
+    pkiBundle = "/var/lib/sbctl";
+    # ~70M per kernel+initrd pair, 1G esp
+    configurationLimit = 8;
+  };
+
+  system.activationScripts.efiBootOrder = {
+    supportsDryActivation = false;
+    text = ''
       efi=${lib.getExe' pkgs.efibootmgr "efibootmgr"}
-      grub=$($efi | ${pkgs.gnused}/bin/sed -n 's/^Boot\([0-9A-F]\{4\}\)\* NixOS-boot.*/\1/p' | ${pkgs.coreutils}/bin/head -1)
-      [ -n "$grub" ] || exit 0
-      $efi | ${pkgs.gnused}/bin/sed -n 's/^Boot\([0-9A-F]\{4\}\)\* Linux Boot Manager.*/\1/p;s/^Boot\([0-9A-F]\{4\}\)\* Fallback Linux Boot Manager.*/\1/p' |
-        while read -r stale; do $efi -q -b "$stale" -B; done
-      rest=$($efi | ${pkgs.gnused}/bin/sed -n 's/^BootOrder: //p' | ${pkgs.coreutils}/bin/tr ',' '\n' | ${pkgs.gnugrep}/bin/grep -v "^$grub$" | ${pkgs.coreutils}/bin/paste -sd,)
-      $efi -q -o "$grub''${rest:+,$rest}"
+      sed=${pkgs.gnused}/bin/sed
+      if [ -d /sys/firmware/efi/efivars ]; then
+        lbm() { $efi | $sed -n 's/^Boot\([0-9A-F]\{4\}\)\* Linux Boot Manager.*/\1/p' | ${pkgs.coreutils}/bin/head -1; }
+        id=$(lbm)
+        if [ -z "$id" ]; then
+          $efi -q -c -d /dev/nvme0n1 -p 4 -L "Linux Boot Manager" -l '\EFI\systemd\systemd-bootx64.efi' || true
+          id=$(lbm)
+        fi
+        order=$($efi | $sed -n 's/^BootOrder: //p')
+        if [ -n "$id" ] && [ "''${order%%,*}" != "$id" ]; then
+          rest=$(echo "$order" | ${pkgs.coreutils}/bin/tr ',' '\n' | ${pkgs.gnugrep}/bin/grep -v "^$id$" | ${pkgs.coreutils}/bin/paste -sd,)
+          $efi -q -o "$id''${rest:+,$rest}" || true
+        fi
+      fi
     '';
   };
 
-  # breeze splash from grub to the login screen. systemd in the initrd keeps
+  # breeze splash from the boot menu to the login screen. systemd in the initrd keeps
   # it up through stage 1, i915 early so the laptop panel has kms right away
   # (the panel hangs off the intel gpu even in prime sync), and the kernel and
   # systemd stay quiet underneath it.

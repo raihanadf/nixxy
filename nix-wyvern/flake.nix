@@ -26,6 +26,11 @@
     # prebuilt ai agents (claude code, claude desktop, omp) from numtide's
     # cache. no nixpkgs follows: the cache only hits on their own pin.
     llm-agents.url = "github:numtide/llm-agents.nix";
+    # secure boot: signed systemd-boot and kernels (modules/boot.nix)
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote/v1.2.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -36,6 +41,7 @@
     dwm-niri,
     dotfiles,
     llm-agents,
+    lanzaboote,
     ...
   }: let
     system = "x86_64-linux";
@@ -49,6 +55,7 @@
       };
       modules = [
         ./configuration.nix
+        lanzaboote.nixosModules.lanzaboote
         home-manager.nixosModules.home-manager
         {
           home-manager.useGlobalPkgs = true;
