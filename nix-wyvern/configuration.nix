@@ -68,6 +68,13 @@
   # honcho 24/7.
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
+  # elementary's Pantheon as a third session on the same sddm. its module
+  # wants lightdm with the pantheon greeter; sddm stays, so that greeter is
+  # off and nixos prints a warning about it.
+  services.desktopManager.pantheon.enable = true;
+  services.xserver.displayManager.lightdm.greeters.pantheon.enable = false;
+  # both modules claim the default session; plasma keeps it
+  services.displayManager.defaultSession = lib.mkForce "plasma";
 
   # Configure keymap in X11
   services.xserver.xkb = {
