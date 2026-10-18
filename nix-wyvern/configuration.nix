@@ -75,6 +75,20 @@
   services.xserver.displayManager.lightdm.greeters.pantheon.enable = false;
   # both modules claim the default session; plasma keeps it
   services.displayManager.defaultSession = lib.mkForce "plasma";
+  # elementary calls its wayland session "Secure Session"; list it as Pantheon
+  nixpkgs.overlays = [
+    (final: prev: {
+      pantheon = prev.pantheon.overrideScope (pfinal: pprev: {
+        elementary-session-settings = pprev.elementary-session-settings.overrideAttrs (old: {
+          postFixup =
+            (old.postFixup or "")
+            + ''
+              sed -i -e '/^Name\[/d' -e 's/^Name=.*/Name=Pantheon/' $out/share/wayland-sessions/pantheon-wayland.desktop
+            '';
+        });
+      });
+    })
+  ];
 
   # Configure keymap in X11
   services.xserver.xkb = {
