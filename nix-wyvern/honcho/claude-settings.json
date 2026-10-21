@@ -33,6 +33,27 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook claude"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/home/raihan/.claude/hooks/heavy-command-guard.js\"",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   },
   "statusLine": {

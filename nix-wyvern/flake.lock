@@ -109,6 +109,26 @@
         "type": "github"
       }
     },
+    "lerd": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792505276,
+        "narHash": "sha256-DvrrLJ7P/FU9ksuiRmS2ETanMVpEUTJ0Oa4mbhnc8eA=",
+        "owner": "lerd-env",
+        "repo": "lerd-nixos",
+        "rev": "0ded024679146de3743f69fed7a73a644d818b19",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lerd-env",
+        "repo": "lerd-nixos",
+        "type": "github"
+      }
+    },
     "llm-agents": {
       "inputs": {
         "bun2nix": "bun2nix",
@@ -168,6 +188,7 @@
         "dotfiles": "dotfiles",
         "dwm-niri": "dwm-niri",
         "home-manager": "home-manager",
+        "lerd": "lerd",
         "llm-agents": "llm-agents",
         "nixpkgs": "nixpkgs_2",
         "suckless": "suckless"

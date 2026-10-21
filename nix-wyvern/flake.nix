@@ -26,6 +26,12 @@
     # prebuilt ai agents (claude code, claude desktop, omp) from numtide's
     # cache. no nixpkgs follows: the cache only hits on their own pin.
     llm-agents.url = "github:numtide/llm-agents.nix";
+    # lerd (rootless-podman php dev env) for the InsightAccess V1 sites,
+    # see modules/insightaccess.nix
+    lerd = {
+      url = "github:lerd-env/lerd-nixos";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -36,6 +42,7 @@
     dwm-niri,
     dotfiles,
     llm-agents,
+    lerd,
     ...
   }: let
     system = "x86_64-linux";
@@ -43,7 +50,7 @@
     nixosConfigurations.wyvern = nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = {
-        inherit suckless dwm-niri dotfiles;
+        inherit suckless dwm-niri dotfiles lerd;
         # Flake source path, so modules can reach vendored files (honcho-bootstrap).
         repo = self.outPath;
       };

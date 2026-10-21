@@ -19,6 +19,7 @@
     ./modules/boot.nix
     ./modules/wifi.nix
     ./modules/wallpaper-sync.nix
+    ./modules/insightaccess.nix
   ];
 
   networking.hostName = "wyvern";
