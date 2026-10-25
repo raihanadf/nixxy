@@ -16,7 +16,8 @@ powercfg /change standby-timeout-ac 0
 powercfg /change hibernate-timeout-ac 0
 powercfg /setacvalueindex SCHEME_CURRENT SUB_BUTTONS LIDACTION 0
 powercfg /setactive SCHEME_CURRENT
-# hibernation off also turns fast startup off, which would leave C: dirty for linux
+# hibernation off also turns fast startup off, which would leave C: dirty for linux while
+# nixos still lived next to it. once it is gone, debloat.ps1 turns fast startup back on
 powercfg /hibernate off
 
 # windows update: download and install, but never restart while someone is signed in

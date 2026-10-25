@@ -96,7 +96,6 @@ foreach ($setup in Get-ChildItem "${env:ProgramFiles(x86)}\Microsoft\Edge\Applic
   $p = Start-Process $setup.FullName -ArgumentList "--uninstall --system-level --force-uninstall" -Wait -PassThru
   "edge setup exit code $($p.ExitCode)"
 }
-if ($stub) { Remove-Item "$legacy\MicrosoftEdge.exe" -Force }
 Remove-Item "$env:LOCALAPPDATA\Microsoft\Edge" -Recurse -Force -ErrorAction SilentlyContinue
 if (Test-Path "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe") { "EDGE IS STILL INSTALLED" } else { "edge removed" }
 # never again: edgeupdate may not install or reinstall the browser
@@ -107,6 +106,19 @@ Get-ChildItem "$env:PUBLIC\Desktop", "$env:USERPROFILE\Desktop", "$env:ProgramDa
   "$env:APPDATA\Microsoft\Windows\Start Menu\Programs", "$env:APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar" `
   -Filter "Microsoft Edge*.lnk" -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force
 Get-ScheduledTask -TaskName "MicrosoftEdgeUpdateBrowserReplacementTask" -ErrorAction SilentlyContinue | Disable-ScheduledTask | Out-Null
+
+"== copilot app: edgeupdate installs it on its own (edge-based, not a store app), so out and blocked too"
+Get-Process copilotapp, copilotapphost -ErrorAction SilentlyContinue | Stop-Process -Force
+New-Item -ItemType File -Path "$legacy\MicrosoftEdge.exe" -Force | Out-Null
+foreach ($setup in Get-ChildItem "${env:ProgramFiles(x86)}\Microsoft\Copilot\Application\*\Installer\copilot_setup.exe" -ErrorAction SilentlyContinue) {
+  $p = Start-Process $setup.FullName -ArgumentList "--uninstall --mscopilot --channel=stable --system-level --force-uninstall" -Wait -PassThru
+  "copilot setup exit code $($p.ExitCode)"
+}
+if ($stub) { Remove-Item "$legacy\MicrosoftEdge.exe" -Force }
+Remove-Item "${env:ProgramFiles(x86)}\Microsoft\Copilot", "$env:LOCALAPPDATA\Microsoft\Copilot" -Recurse -Force -ErrorAction SilentlyContinue
+Set-Reg "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate" "Install{C50565E9-CCCF-44B4-BA15-5AC5C6569197}" 0
+Set-Reg "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate" "Update{C50565E9-CCCF-44B4-BA15-5AC5C6569197}" 0
+Set-Reg "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" ShowCopilotButton 0
 
 "== windows 11: stay on windows 10 22h2, no upgrade offers or end-of-support nags"
 $wu = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate"
@@ -197,6 +209,50 @@ foreach ($t in "\Microsoft\Windows\Application Experience\Microsoft Compatibilit
 "== defender: keep it, but stop it scanning every file wyvern touches"
 Add-MpPreference -ExclusionPath "C:\WSL"
 foreach ($p in "wsl.exe", "wslhost.exe", "wslservice.exe", "vmmem", "vmwp.exe") { Add-MpPreference -ExclusionProcess $p }
+
+"== leftovers after comparing with atlasos"
+# fast startup on, for a quick cold boot after a shutdown (restarts are always full boots).
+# it only needs the reduced hibernation file; the laptop itself never hibernates on ac
+powercfg /hibernate on
+powercfg /hibernate /type reduced
+powercfg /change hibernate-timeout-ac 0
+Set-Reg "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" HiberbootEnabled 1
+# no boot menu wait: the 30s timeout was left over from dual booting nixos
+bcdedit /timeout 0 | Out-Null
+"reserved storage: " + ((DISM /Online /Set-ReservedStorageState /State:Disabled) -match "completed|Error" | Select-Object -First 1)
+Set-Reg "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance" MaintenanceDisabled 1
+Set-Reg "HKLM:\SOFTWARE\Microsoft\FTH" Enabled 0
+# devices never power down on ac. wi-fi above all: windows switching it off drops tailscale and wyvern with it
+powercfg /setacvalueindex SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0
+powercfg /setacvalueindex SCHEME_CURRENT 19cbb8fa-5279-450e-9fac-8a3d5fedd0c1 12bbebe6-58d6-4636-95bb-3217ef867c1a 0
+powercfg /setactive SCHEME_CURRENT
+# Disable-NetAdapterPowerManagement does not stick on the intel wi-fi driver; PnPCapabilities=24 is the
+# device manager checkbox itself ("allow the computer to turn off this device" unticked)
+$class = "HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}"
+foreach ($a in Get-NetAdapter -Physical) {
+  $key = Get-ChildItem $class -ErrorAction SilentlyContinue | Where-Object { (Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue).NetCfgInstanceId -eq $a.InterfaceGuid }
+  if ($key) { "no power saving: $($a.Name)"; Set-ItemProperty $key.PSPath -Name PnPCapabilities -Value 24 -Type DWord }
+}
+# windows update keeps its hands off drivers (the nvidia one especially)
+Set-Reg "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" ExcludeWUDriversInQualityUpdate 1
+Set-Reg "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" HideFileExt 0
+# legacy name resolution nobody here needs: llmnr and netbios
+Set-Reg "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" EnableMulticast 0
+Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Services\NetBT\Parameters\Interfaces" | ForEach-Object { Set-ItemProperty $_.PSPath -Name NetbiosOptions -Value 2 }
+# mouse acceleration off (games use raw input anyway, this is the desktop cursor)
+Set-ItemProperty "HKCU:\Control Panel\Mouse" -Name MouseSpeed -Value "0"
+Set-ItemProperty "HKCU:\Control Panel\Mouse" -Name MouseThreshold1 -Value "0"
+Set-ItemProperty "HKCU:\Control Panel\Mouse" -Name MouseThreshold2 -Value "0"
+# printing is gone, print to pdf with it
+Remove-Printer -Name "Fax" -ErrorAction SilentlyContinue
+# diagnostics, mail sync, connected devices, intel me helpers, netbios helper, smb file server,
+# msi nahimic, printing. the per-user ones (OneSyncSvc, CDPUserSvc) are templates, set in the registry
+foreach ($s in "DPS", "WdiServiceHost", "WdiSystemHost", "CDPSvc", "LMS", "jhi_service", "lmhosts", "LanmanServer", "NahimicService", "Spooler") {
+  if (Get-Service $s -ErrorAction SilentlyContinue) { "disable $s"; Stop-Service $s -Force -ErrorAction SilentlyContinue; Set-Service $s -StartupType Disabled }
+}
+foreach ($s in "OneSyncSvc", "CDPUserSvc") { "disable $s (per user)"; Set-Reg "HKLM:\SYSTEM\CurrentControlSet\Services\$s" Start 4 }
+foreach ($s in "SstpSvc", "RasMan") { "manual $s"; Set-Service $s -StartupType Manual }
+Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskName -match "Nahimic|A-Volute" } | ForEach-Object { "disable task $($_.TaskName)"; Disable-ScheduledTask -InputObject $_ | Out-Null }
 
 Snapshot "after (a reboot frees more)"
 Stop-Transcript | Out-Null
