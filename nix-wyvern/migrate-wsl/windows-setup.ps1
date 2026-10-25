@@ -20,6 +20,13 @@ powercfg /setactive SCHEME_CURRENT
 # nixos still lived next to it. once it is gone, debloat.ps1 turns fast startup back on
 powercfg /hibernate off
 
+# jakarta time, same as wyvern's Asia/Jakarta (windows' utc+7 zone covers bangkok, hanoi, jakarta).
+# the time service runs always, so a 24/7 host never drifts
+Set-TimeZone -Id "SE Asia Standard Time"
+Set-Service W32Time -StartupType Automatic
+Start-Service W32Time
+w32tm /config /manualpeerlist:"time.windows.com,0x9 pool.ntp.org,0x9" /syncfromflags:manual /update | Out-Null
+
 # windows update: download and install, but never restart while someone is signed in
 $au = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"
 New-Item -Path $au -Force | Out-Null
@@ -43,6 +50,9 @@ $keepalive = "$env:USERPROFILE\wyvern-wsl.vbs"
 'CreateObject("WScript.Shell").Run "wsl.exe -d NixOS --exec /run/current-system/sw/bin/sleep infinity", 0, True' | Set-Content -Path $keepalive -Encoding ascii
 $action = New-ScheduledTaskAction -Execute "wscript.exe" -Argument "`"$keepalive`""
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+# 30s after sign-in: nixos booting docker, honcho and lerd at the same moment as the desktop made
+# the first half minute after a (fast startup) boot feel slow; the desktop settles first now
+$trigger.Delay = "PT30S"
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0 -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -Hidden
 Register-ScheduledTask -TaskName "wyvern-wsl" -Action $action -Trigger $trigger -Settings $settings -Force | Out-Null
 
