@@ -17,11 +17,10 @@ The new system is `nixosConfigurations.wyvern-wsl` (`../wsl.nix`,
 | nvme0n1p4 1G vfat `BOOT` | NixOS leftover | delete in step 7 |
 | nvme0n1p5 180G btrfs | NixOS root | delete in step 7 |
 
-**Fast path (taken on 2026-10-25):** wyvern was wiped right after `backup.sh`
-ran without sudo, so there is no `nixos.wsl`, no `C:\wyvern-migration` and no
-ssh host keys. Everything lives on loong in `~/wyvern-migration` (read
-`HANDOFF.md` there first). Steps 0 and 1 are done, step 7 is moot; the
-"fast path" notes below say what changes.
+**Done on 2026-10-25:** steps 0 and 1 ran with sudo: `nixos.wsl`, the ssh
+host keys and the whole backup are on `C:\wyvern-migration` and on loong in
+`~/wyvern-migration` (with `HANDOFF.md` and the secrets). The "fast path"
+notes below are only for when the C: copy is gone.
 
 Until step 7 the old NixOS still boots from the boot menu, so every step
 before it can be backed out.
