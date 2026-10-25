@@ -4,7 +4,7 @@ wyvern stays wyvern: same hostname, same tailnet name, same `~`, same honcho
 data and JWT secret (so loong's tokens keep working), same ssh host keys (so
 loong's known_hosts does not complain). Only the hardware owner changes.
 
-The new system is `nixosConfigurations.wyvern-wsl` (`../wsl.nix`,
+The new system is `nixosConfigurations.wyvern` (`../wsl.nix`,
 `../home-wsl.nix`). The old one (`wyvern`) is untouched until step 7.
 
 ## The disk, as it is now
@@ -36,7 +36,7 @@ Boot Windows, open an admin PowerShell, run `powercfg /h off`, then **shut down*
 cd ~/.nixxy/nix-wyvern
 # commit and push nixxy first (git add wsl.nix home-wsl.nix migrate-wsl flake.*), it is in the backup either way
 mkdir -p ~/wyvern-migration
-nix build path:$PWD#nixosConfigurations.wyvern-wsl.config.system.build.tarballBuilder
+nix build path:$PWD#nixosConfigurations.wyvern.config.system.build.tarballBuilder
 sudo ./result/bin/nixos-wsl-tarball-builder ~/wyvern-migration/nixos.wsl
 sudo chown raihan ~/wyvern-migration/nixos.wsl
 bash migrate-wsl/backup.sh
@@ -86,7 +86,7 @@ this flake (the distro's default user is `nixos` until the switch):
 ```powershell
 iwr https://github.com/nix-community/NixOS-WSL/releases/latest/download/nixos.wsl -OutFile $env:TEMP\nixos.wsl
 wsl --import NixOS C:\WSL\NixOS $env:TEMP\nixos.wsl --version 2
-wsl -d NixOS -u root -- nixos-rebuild boot --option experimental-features 'nix-command flakes' --flake 'github:raihanadf/nixxy?dir=nix-wyvern#wyvern-wsl'
+wsl -d NixOS -u root -- nixos-rebuild boot --option experimental-features 'nix-command flakes' --flake 'github:raihanadf/nixxy?dir=nix-wyvern#wyvern'
 wsl --terminate NixOS
 wsl -d NixOS -u root passwd raihan
 wsl -d NixOS
@@ -134,9 +134,8 @@ starts honcho and the user services, and prints checks.
 - **From loong**: `ssh wyvern` (no host key warning), Claude Code honcho recall
   works, `mem search test`, the Remote page shows wyvern online, Chat answers,
   a WhatsApp message to the bot gets a reply, Nite status says linked.
-- Rebuilds from now on: `sudo nixos-rebuild switch --flake ~/.nixxy/nix-wyvern#wyvern-wsl`.
-  A plain `nixos-rebuild switch` picks `#wyvern`, the bare-metal config. Rename
-  the outputs once the old system is gone.
+- Rebuilds: plain `sudo nixos-rebuild switch` (the outputs were renamed on
+  2026-10-25: `#wyvern` is this wsl system, `#wyvern-metal` the old install).
 
 Give it a day or two of normal use before step 7.
 

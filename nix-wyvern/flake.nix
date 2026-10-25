@@ -32,7 +32,7 @@
       url = "github:lerd-env/lerd-nixos";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # wyvern-wsl: wyvern as a distro on windows (wsl.nix, migrate-wsl/)
+    # wyvern runs as a distro on windows (wsl.nix, migrate-wsl/)
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -53,7 +53,9 @@
   }: let
     system = "x86_64-linux";
   in {
-    nixosConfigurations.wyvern = nixpkgs.lib.nixosSystem {
+    # the bare-metal install, retired on 2026-10-25 for windows + wsl. kept to
+    # read from; nothing boots it any more
+    nixosConfigurations.wyvern-metal = nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = {
         inherit suckless dwm-niri dotfiles lerd;
@@ -76,10 +78,11 @@
       ];
     };
 
-    # the same machine after the move to windows 10 + wsl. build the import
-    # tarball with: nix build .#nixosConfigurations.wyvern-wsl.config.system.build.tarballBuilder
+    # wyvern as it runs now, on windows 10 + wsl. the hostname matches, so a
+    # plain `nixos-rebuild switch` picks this one. a fresh import tarball:
+    # nix build .#nixosConfigurations.wyvern.config.system.build.tarballBuilder
     # then: sudo ./result/bin/nixos-wsl-tarball-builder (see migrate-wsl/README.md)
-    nixosConfigurations.wyvern-wsl = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.wyvern = nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = {
         inherit lerd;

@@ -60,6 +60,10 @@
     ];
   };
 
+  # nixos-wsl lets wheel sudo without a password; wyvern is reachable over the
+  # tailnet, so keep asking like the bare-metal install did
+  security.sudo.wheelNeedsPassword = true;
+
   programs.fish.enable = true;
 
   # volta's node tarballs expect /lib64/ld-linux-x86-64.so.2 (see modules/node.nix)
