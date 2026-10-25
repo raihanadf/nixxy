@@ -254,5 +254,9 @@ foreach ($s in "OneSyncSvc", "CDPUserSvc") { "disable $s (per user)"; Set-Reg "H
 foreach ($s in "SstpSvc", "RasMan") { "manual $s"; Set-Service $s -StartupType Manual }
 Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskName -match "Nahimic|A-Volute" } | ForEach-Object { "disable task $($_.TaskName)"; Disable-ScheduledTask -InputObject $_ | Out-Null }
 
+"== tray icon cache: the removed apps leave stale entries that slow explorer down at boot"
+# christitustech/winutil#1642, henrypp/simplewall#1695. only forgets which tray icons were shown or hidden
+Remove-ItemProperty "HKCU:\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\TrayNotify" -Name IconStreams, PastIconsStream -ErrorAction SilentlyContinue
+
 Snapshot "after (a reboot frees more)"
 Stop-Transcript | Out-Null
