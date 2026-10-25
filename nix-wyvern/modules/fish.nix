@@ -67,6 +67,19 @@
     # Functions
     functions = {
       mkcd = "mkdir -p -- $argv[1]; and cd $argv[1]";
+      # claude code accounts, same split as loong: personal is the default
+      # (~/.claude-personal), work keeps the original ~/.claude dir
+      claude = {
+        description = "claude code (personal account)";
+        body = ''
+          set -lx CLAUDE_CONFIG_DIR $HOME/.claude-personal
+          command claude $argv
+        '';
+      };
+      claude-work = {
+        description = "claude code (work account)";
+        body = "command env -u CLAUDE_CONFIG_DIR claude $argv";
+      };
       batcat = ''
         if type -q bat
           bat $argv

@@ -233,8 +233,18 @@ in {
     fzf
     fd
     bat
-    # minecraft launcher; bundles its own jdks
-    prismlauncher
+    # minecraft launcher, Diegiwg's cracked fork (offline accounts) built
+    # from source on nixpkgs' recipe; the wrapper bundles jdk25/21/17/8
+    (prismlauncher.override {
+      prismlauncher-unwrapped = prismlauncher-unwrapped.overrideAttrs (_: {
+        src = fetchFromGitHub {
+          owner = "Diegiwg";
+          repo = "PrismLauncher-Cracked";
+          tag = "11.0.3";
+          hash = "sha256-pFIDOP03I76r14bXoKL7tEEaLlGFJ10MqMgGR4D/mvE=";
+        };
+      });
+    })
     # kitty's font (dotfiles kitty.conf: CaskaydiaCove NF)
     nerd-fonts.caskaydia-cove
     nerd-fonts.jetbrains-mono
