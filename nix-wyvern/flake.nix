@@ -32,6 +32,11 @@
       url = "github:lerd-env/lerd-nixos";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # wyvern-wsl: wyvern as a distro on windows (wsl.nix, migrate-wsl/)
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -43,6 +48,7 @@
     dotfiles,
     llm-agents,
     lerd,
+    nixos-wsl,
     ...
   }: let
     system = "x86_64-linux";
@@ -66,6 +72,32 @@
             llm-agents = llm-agents.packages.${system};
           };
           home-manager.users.raihan = import ./home.nix;
+        }
+      ];
+    };
+
+    # the same machine after the move to windows 10 + wsl. build the import
+    # tarball with: nix build .#nixosConfigurations.wyvern-wsl.config.system.build.tarballBuilder
+    # then: sudo ./result/bin/nixos-wsl-tarball-builder (see migrate-wsl/README.md)
+    nixosConfigurations.wyvern-wsl = nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = {
+        inherit lerd;
+        repo = self.outPath;
+      };
+      modules = [
+        nixos-wsl.nixosModules.default
+        ./wsl.nix
+        home-manager.nixosModules.home-manager
+        {
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.backupFileExtension = "backup";
+          home-manager.extraSpecialArgs = {
+            inherit dotfiles;
+            llm-agents = llm-agents.packages.${system};
+          };
+          home-manager.users.raihan = import ./home-wsl.nix;
         }
       ];
     };
