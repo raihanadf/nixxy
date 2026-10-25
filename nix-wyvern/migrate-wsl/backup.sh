@@ -29,8 +29,9 @@ sudo -n true 2>/dev/null && sudo=yes
 echo "== repos with uncommitted or unpushed work (kept as-is in home.tar, listed for you)"
 for d in ~/Projects/*/ ~/Projects/InsightAccess/*/ ~/tools/*/ ~/.nixxy/; do
   [ -d "$d/.git" ] || continue
-  dirty=$(git -C "$d" status --porcelain 2>/dev/null | wc -l)
-  ahead=$(git -C "$d" log --oneline '@{u}..' 2>/dev/null | wc -l)
+  # a repo with no upstream fails the log; under pipefail that would end the script
+  dirty=$(git -C "$d" status --porcelain 2>/dev/null | wc -l || true)
+  ahead=$(git -C "$d" log --oneline '@{u}..' 2>/dev/null | wc -l || true)
   [ "$dirty$ahead" = "00" ] || echo "$d dirty=$dirty unpushed=$ahead"
 done | tee meta/dirty-repos.txt
 
@@ -62,7 +63,8 @@ fi
 
 echo "== home"
 # home-manager's links point into this machine's store, the new system makes its own
-(cd ~ && find . -xdev -type l -lname '/nix/store/*') > meta/hm-links.txt
+# podman's storage has dirs owned by subuids that find cannot read; that is not a failure
+(cd ~ && find . -xdev -type l -lname '/nix/store/*' 2>/dev/null || true) > meta/hm-links.txt
 cat > meta/home-excludes.txt <<'EOF'
 ./wyvern-migration
 ./.cache
@@ -73,8 +75,10 @@ cat > meta/home-excludes.txt <<'EOF'
 ./.nix-defexpr
 ./.local/state/nix
 ./.local/state/home-manager
+./.local/share/lerd/data/redis
 EOF
-# tar exits 1 when a file changed while it was read; that is a warning, not a failure
+# tar exits 1 when a file changed while it was read; that is a warning, not a failure.
+# lerd's redis dump is owned by a podman subuid and unreadable, and only a cache, so it is excluded above
 tar -C ~ --exclude-from=meta/home-excludes.txt --exclude-from=meta/hm-links.txt -cpf - . | zstd -q -T0 > home.tar.zst || [ $? -eq 1 ]
 
 sha256sum home.tar.zst honcho.sql.gz volumes/* $(ls ssh-host-keys.tar 2>/dev/null) > SHA256SUMS
