@@ -19,7 +19,12 @@ mkdir -p "$OUT/volumes" "$OUT/meta"
 cd "$OUT"
 # windows needs these scripts before any linux runs there
 cp -r ~/.nixxy/nix-wyvern/migrate-wsl "$OUT/"
-[ -f nixos.wsl ] || { echo "build nixos.wsl into $OUT first (README step 1)"; exit 1; }
+# without it, the new box starts from the official NixOS-WSL release instead (README step 3)
+[ -f nixos.wsl ] || echo "no nixos.wsl in $OUT, carrying on without it"
+# the sudo steps (host keys, copy to C:) are skipped when sudo would ask for a password
+sudo=no
+[ -t 0 ] && sudo=yes
+sudo -n true 2>/dev/null && sudo=yes
 
 echo "== repos with uncommitted or unpushed work (kept as-is in home.tar, listed for you)"
 for d in ~/Projects/*/ ~/Projects/InsightAccess/*/ ~/tools/*/ ~/.nixxy/; do
@@ -49,9 +54,11 @@ for v in $(docker volume ls -q); do
   docker run --rm -v "$v":/v:ro alpine tar -C /v -cf - . | zstd -q -T0 > "volumes/$v.tar.zst"
 done
 
-echo "== ssh host keys (sudo)"
-sudo sh -c 'cd /etc/ssh && tar -cf - ssh_host_*' > ssh-host-keys.tar
-chmod 600 ssh-host-keys.tar
+if [ $sudo = yes ]; then
+  echo "== ssh host keys (sudo)"
+  sudo sh -c 'cd /etc/ssh && tar -cf - ssh_host_*' > ssh-host-keys.tar
+  chmod 600 ssh-host-keys.tar
+fi
 
 echo "== home"
 # home-manager's links point into this machine's store, the new system makes its own
@@ -70,17 +77,19 @@ EOF
 # tar exits 1 when a file changed while it was read; that is a warning, not a failure
 tar -C ~ --exclude-from=meta/home-excludes.txt --exclude-from=meta/hm-links.txt -cpf - . | zstd -q -T0 > home.tar.zst || [ $? -eq 1 ]
 
-sha256sum home.tar.zst honcho.sql.gz ssh-host-keys.tar volumes/* > SHA256SUMS
+sha256sum home.tar.zst honcho.sql.gz volumes/* $(ls ssh-host-keys.tar 2>/dev/null) > SHA256SUMS
 du -sh "$OUT"
 
 echo "== copy to loong"
 rsync -a --partial --info=progress2 "$OUT/" raihan@loong:wyvern-migration/
 
-echo "== copy to the windows partition (sudo)"
-sudo mkdir -p "$WIN_MNT"
-sudo mount -t ntfs3 "$WIN_PART" "$WIN_MNT"
-sudo rsync -rt --info=progress2 "$OUT/" "$WIN_MNT/wyvern-migration/"
-sudo umount "$WIN_MNT"
+if [ $sudo = yes ]; then
+  echo "== copy to the windows partition (sudo)"
+  sudo mkdir -p "$WIN_MNT"
+  sudo mount -t ntfs3 "$WIN_PART" "$WIN_MNT"
+  sudo rsync -rt --info=progress2 "$OUT/" "$WIN_MNT/wyvern-migration/"
+  sudo umount "$WIN_MNT"
+fi
 
 echo
 echo "done. backup is in $OUT, on loong at ~/wyvern-migration and on windows at C:\\wyvern-migration."

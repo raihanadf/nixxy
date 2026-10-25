@@ -17,6 +17,12 @@ The new system is `nixosConfigurations.wyvern-wsl` (`../wsl.nix`,
 | nvme0n1p4 1G vfat `BOOT` | NixOS leftover | delete in step 7 |
 | nvme0n1p5 180G btrfs | NixOS root | delete in step 7 |
 
+**Fast path (taken on 2026-10-25):** wyvern was wiped right after `backup.sh`
+ran without sudo, so there is no `nixos.wsl`, no `C:\wyvern-migration` and no
+ssh host keys. Everything lives on loong in `~/wyvern-migration` (read
+`HANDOFF.md` there first). Steps 0 and 1 are done, step 7 is moot; the
+"fast path" notes below say what changes.
+
 Until step 7 the old NixOS still boots from the boot menu, so every step
 before it can be backed out.
 
@@ -54,6 +60,13 @@ Boot Windows. Admin PowerShell:
 powershell -ExecutionPolicy Bypass -File C:\wyvern-migration\migrate-wsl\windows-setup.ps1
 ```
 
+Fast path: there is no `C:\wyvern-migration`, fetch the script from GitHub:
+
+```powershell
+iwr https://raw.githubusercontent.com/raihanadf/nixxy/main/nix-wyvern/migrate-wsl/windows-setup.ps1 -OutFile $env:TEMP\ws.ps1
+powershell -ExecutionPolicy Bypass -File $env:TEMP\ws.ps1
+```
+
 Reboot. Then turn on **automatic sign-in**, since the task that keeps NixOS
 running starts at sign-in: `netplwiz` → untick "Users must enter a user name
 and password" (if the box is missing: Settings → Accounts → Sign-in options →
@@ -65,6 +78,18 @@ turn off "Require Windows Hello sign-in"), or Sysinternals **Autologon**.
 wsl --import NixOS C:\WSL\NixOS C:\wyvern-migration\nixos.wsl --version 2
 wsl --set-default NixOS
 wsl -d NixOS -u root passwd raihan     # sudo needs it, like on the old wyvern
+wsl -d NixOS
+```
+
+Fast path, no `nixos.wsl`: import the official release, then switch it to
+this flake (the distro's default user is `nixos` until the switch):
+
+```powershell
+iwr https://github.com/nix-community/NixOS-WSL/releases/latest/download/nixos.wsl -OutFile $env:TEMP\nixos.wsl
+wsl --import NixOS C:\WSL\NixOS $env:TEMP\nixos.wsl --version 2
+wsl -d NixOS -u root -- nixos-rebuild boot --option experimental-features 'nix-command flakes' --flake 'github:raihanadf/nixxy?dir=nix-wyvern#wyvern-wsl'
+wsl --terminate NixOS
+wsl -d NixOS -u root passwd raihan
 wsl -d NixOS
 ```
 
@@ -85,6 +110,14 @@ sudo tailscale up --hostname=wyvern     # open the printed link in a Windows bro
 
 ```sh
 bash /mnt/c/wyvern-migration/migrate-wsl/restore.sh
+```
+
+Fast path: the backup is on loong. From loong, once `ssh wyvern` works
+(loong's key is in `wsl.nix`; accept the new host key after `ssh-keygen -R wyvern`):
+
+```sh
+rsync -a --exclude secrets ~/wyvern-migration/ wyvern:wyvern-migration/
+ssh -t wyvern 'bash ~/wyvern-migration/migrate-wsl/restore.sh ~/wyvern-migration'
 ```
 
 It checks the checksums, puts the docker volumes back, unpacks `~`, repoints

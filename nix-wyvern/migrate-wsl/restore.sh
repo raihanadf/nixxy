@@ -34,9 +34,13 @@ zstd -dc home.tar.zst | tar -C ~ -xpf -
 # the old daemon unit ran bun from the old store; the profile path survives rebuilds
 sed -i -E 's#/nix/store/[^/ ]*-bun-[^/ ]*/bin/bun#/etc/profiles/per-user/raihan/bin/bun#' ~/.config/systemd/user/*.service
 
-echo "== ssh host keys (sudo)"
-sudo tar -C /etc/ssh -xpf ssh-host-keys.tar
-sudo systemctl restart sshd
+if [ -f ssh-host-keys.tar ]; then
+  echo "== ssh host keys (sudo)"
+  sudo tar -C /etc/ssh -xpf ssh-host-keys.tar
+  sudo systemctl restart sshd
+else
+  echo "== no ssh host keys in the backup: on loong, ssh-keygen -R wyvern once"
+fi
 
 echo "== honcho"
 docker compose -p honcho-local --project-directory ~/.honcho/profiles/local up -d
