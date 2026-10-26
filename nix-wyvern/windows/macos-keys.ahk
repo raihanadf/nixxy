@@ -6,6 +6,9 @@
 ; hook-based hotkeys only, so a key this script sends never fires one of its own hotkeys
 #UseHook
 SetTitleMatchMode 2
+; releasing alt for a send taps this key to stop the menu bar; never ctrl, since ctrl+alt+shift+win
+; is windows' "office key", which opens microsoft 365 / copilot in the browser
+A_MenuMaskKey := "vkE8"
 
 ; games read raw input and riot vanguard watches injected keys: hands off while they are in front
 GroupAdd "games", "ahk_exe VALORANT-Win64-Shipping.exe"
@@ -20,9 +23,10 @@ GroupAdd "terminal", "ahk_exe WindowsTerminal.exe"
 !m::WinMinimize "A"
 
 ; screenshots, like cmd+shift+3/4/5
-!+3::Send "{PrintScreen}"   ; whole screen to the clipboard (and the snip notification)
-!+4::Send "#+s"             ; region
-!+5::Run "ms-screenclip:"   ; the snipping overlay
+; no win key is ever sent: with alt+shift still held it adds up to the office key
+!+3::Send "{PrintScreen}"   ; whole screen to the clipboard
+!+4::Run "ms-screenclip:"   ; region snip overlay
+!+5::Run "ms-screensketch:" ; snip & sketch
 
 ; text navigation, like cmd+arrows and cmd+backspace
 !Left::Send "{Home}"
@@ -39,15 +43,13 @@ GroupAdd "terminal", "ahk_exe WindowsTerminal.exe"
 ![::Send "!{Left}"
 !]::Send "!{Right}"
 
-; in windows terminal the shell keeps alt as meta (fish, vim), so only the cmd keys a mac
-; terminal would take are mapped there; copy and paste go to terminal's ctrl+shift ones
+; in windows terminal the shell keeps alt as meta (fish, vim): fzf's alt+c (directories) and
+; alt+v (variables), fish's alt+f (forward word). so only tabs and windows are mapped there; copy is
+; copy-on-select (or ctrl+shift+c), paste is ctrl+shift+v or a right click
 #HotIf WinActive("ahk_group terminal")
-!c::Send "^+c"
-!v::Send "^+v"
 !t::Send "^+t"
 !w::Send "^+w"
 !n::Send "^+n"
-!f::Send "^+f"
 
 ; everywhere else alt+letter is cmd+letter
 #HotIf !WinActive("ahk_group games") && !WinActive("ahk_group terminal")

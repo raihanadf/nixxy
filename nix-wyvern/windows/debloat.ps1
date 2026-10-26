@@ -119,6 +119,13 @@ Remove-Item "${env:ProgramFiles(x86)}\Microsoft\Copilot", "$env:LOCALAPPDATA\Mic
 Set-Reg "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate" "Install{C50565E9-CCCF-44B4-BA15-5AC5C6569197}" 0
 Set-Reg "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate" "Update{C50565E9-CCCF-44B4-BA15-5AC5C6569197}" 0
 Set-Reg "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" ShowCopilotButton 0
+# the office key (ctrl+alt+shift+win, and +w/t/o/l/x/... per office app) and win+c fall back to
+# microsoft 365 / copilot in the browser when nothing handles their links: a do-nothing handler does
+foreach ($proto in "ms-officeapp", "ms-copilot") {
+  Set-Reg "HKCU:\Software\Classes\$proto" "(default)" "URL:$proto (disabled)" String
+  Set-Reg "HKCU:\Software\Classes\$proto" "URL Protocol" "" String
+  Set-Reg "HKCU:\Software\Classes\$proto\shell\open\command" "(default)" "rundll32" String
+}
 
 "== windows 11: stay on windows 10 22h2, no upgrade offers or end-of-support nags"
 $wu = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate"
