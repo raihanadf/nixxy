@@ -28,7 +28,9 @@
 
   home.file.".gitconfig".source = "${dotfiles}/dots/gitconfig";
   home.file.".vimrc".source = "${dotfiles}/dots/vimrc";
-  home.file.".tmux.conf".source = "${dotfiles}/dots/tmux.conf";
+  # loong's tmux.conf (newer than the dotfiles one: mouse, vi copy mode, dotbar). plugins come from
+  # tpm, which the file itself clones on first start; `prefix + I` installs the rest
+  home.file.".tmux.conf".source = ./tmux.conf;
 
   xdg.configFile."nvim".source = "${dotfiles}/config/nvim";
   xdg.configFile."starship.toml".source = "${dotfiles}/config/starship.toml";
