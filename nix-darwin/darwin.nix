@@ -25,6 +25,7 @@
     pkgs.texlive.combined.scheme-full
     pkgs.htop-vim
     pkgs.ollama
+    pkgs.dafny # formal proofs for the ia workflow (ia prove)
   ];
 
   nix.settings.experimental-features = "nix-command flakes";
